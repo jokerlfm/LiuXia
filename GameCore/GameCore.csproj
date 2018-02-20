@@ -54,11 +54,13 @@
   <ItemGroup>
     <Compile Include="BattleMap.cs" />
     <Compile Include="CameraUnit.cs" />
+    <Compile Include="Character.cs" />
     <Compile Include="ConfigHandler.cs" />
     <Compile Include="ConstManager.cs" />
     <Compile Include="BattleUnit.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="DynamicUnit.cs" />
+    <Compile Include="Item.cs" />
     <Compile Include="WorldBuildingUnit.cs" />
     <Compile Include="MapUnit.cs" />
     <Compile Include="Instruction.cs" />

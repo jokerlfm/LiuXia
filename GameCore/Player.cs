@@ -13,11 +13,16 @@ namespace GameCore
             this.playerWorldUnit = new DynamicUnit();
             this.playerSceneUnit = new DynamicUnit();
             this.playerBattleUnit = new BattleUnit();
+
+            partyMembersArray = new int[8];
+            itemsDictionary = new Dictionary<int, int>(1000);
         }
 
-        #region declaration
-        public int smapID = 0, wmapID = 0;
-        public int mmapCoordX = 0, mmapCoordY = 0, smapCoordX = 0, smapCoordY = 0, wmapCoordX = 0, wmapCoordY = 0;
+        #region declaration        
+        public int boating = 0, playerFaceDirection = 0, mmapCoordX = 0, mmapCoordY = 0, smapCoordX = 0, smapCoordY = 0, boatCoordX1 = 0, boatCoordY1 = 0, boatCoordX2 = 0, boatCoordY2 = 0, boatFaceDirection = 0;
+        public int[] partyMembersArray;
+        Dictionary<int, int> itemsDictionary;
+
         public PlayerState state;
 
         public DynamicUnit playerWorldUnit;
