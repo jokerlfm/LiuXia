@@ -13,6 +13,7 @@ namespace GameCore
             surfaceLayerMatrix = new FixedUnit[480, 480];
             buildingLayerMatrix = new WorldBuildingUnit[480, 480];
             buildXYLayerMatrix = new BuildXY[480, 480];
+            destMatrix = new Entrance[480, 480];
         }
 
         #region declaration
@@ -20,6 +21,7 @@ namespace GameCore
         public FixedUnit[,] surfaceLayerMatrix;
         public WorldBuildingUnit[,] buildingLayerMatrix;
         public BuildXY[,] buildXYLayerMatrix;
+        public Entrance[,] destMatrix;
         #endregion
 
         #region business

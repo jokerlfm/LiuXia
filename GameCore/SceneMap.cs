@@ -14,14 +14,20 @@ namespace GameCore
             this.buildingLayerMatrix = new FixedUnit[64, 64];
             this.hangLayerMatrix = new FixedUnit[64, 64];
             this.eventLayerMatrix = new EventUnit[64, 64];
+            destMatrix = new Entrance[64, 64];
         }
 
         #region declaration
-        public int mapID = 0;
+        public int mapID = 0;        
+        public int enterMusicID = 0;
+        public int exitMusicID = 0;
+        public int opened = 0;
+        public int playerEnterCoordinateX = 0, playerEnterCoordinateY = 0;
         public FixedUnit[,] floorLayerMatrix;
         public FixedUnit[,] buildingLayerMatrix;
         public FixedUnit[,] hangLayerMatrix;
         public EventUnit[,] eventLayerMatrix;
+        public Entrance[,] destMatrix;
         #endregion
 
         #region business

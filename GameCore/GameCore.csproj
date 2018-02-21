@@ -58,8 +58,13 @@
     <Compile Include="ConfigHandler.cs" />
     <Compile Include="ConstManager.cs" />
     <Compile Include="BattleUnit.cs" />
+    <Compile Include="Entrance.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="DynamicUnit.cs" />
+    <Compile Include="Menu.cs" />
+    <Compile Include="PlayerData.cs" />
+    <Compile Include="Shop.cs" />
+    <Compile Include="Skill.cs" />
     <Compile Include="Item.cs" />
     <Compile Include="WorldBuildingUnit.cs" />
     <Compile Include="MapUnit.cs" />
@@ -67,10 +72,9 @@
     <Compile Include="AnchorUnit.cs" />
     <Compile Include="EventUnit.cs" />
     <Compile Include="FixedUnit.cs" />
-    <Compile Include="Player.cs" />
+    <Compile Include="ActivePlayer.cs" />
     <Compile Include="WorldMap.cs" />
     <Compile Include="NTexture.cs" />
-    <Compile Include="GameOperator.cs" />
     <Compile Include="GameService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceManager.cs" />

@@ -10,12 +10,15 @@ namespace GameCore
         public Character(int pmID)
         {
             characterID = pmID;
-            skillDictionary = new Dictionary<int, Dictionary<int, int>>();
-            itemDictionary = new Dictionary<int, int>();
+            skillsIDArray = new int[10];
+            skillsLevelArray = new int[10];
+            itemsIDArray = new int[4];
+            itemsCountArray = new int[4];
         }
 
         #region declaration
         public int characterID = 0;
+        public int characterPortrait = 0;
         public int increaseRate = 0;
         public string characterName = "";
         public string characterNickName = "";
@@ -53,8 +56,10 @@ namespace GameCore
         public int intelligence = 0;
         public int trainingItem = 0;
         public int trainingEXP = 0;
-        public Dictionary<int, Dictionary<int, int>> skillDictionary;
-        public Dictionary<int, int> itemDictionary;
+        public int[] skillsIDArray;
+        public int[] skillsLevelArray;
+        public int[] itemsIDArray;
+        public int[] itemsCountArray;
         #endregion
 
         #region business
