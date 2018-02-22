@@ -26,19 +26,21 @@ namespace GameCore
         public static Dictionary<int, Shop> shopDictionary;
 
         public static PlayerData mainPlayerData;
+        public static Dictionary<MenuType, Menu> menuDictionary;
         #endregion
 
         #region business
         public static void LoadResource()
         {
             musicStore = new Dictionary<int, byte[]>();
-            
-            GameService game = GameService.GetGame();
-            game.mainCamera = new CameraUnit();
-            game.mainPlayer = new ActivePlayer();
 
             GenerateNP();
             GenerateMenus();
+
+            GameService game = GameService.GetGame();
+            game.mainCamera = new CameraUnit();
+            game.mainPlayer = new ActivePlayer();            
+            game.activeMenu = menuDictionary[MenuType.MenuType_None];
         }
 
         private static void GenerateNP()
@@ -213,7 +215,11 @@ namespace GameCore
 
         private static void GenerateMenus()
         {
-
+            menuDictionary = new Dictionary<MenuType, Menu>();
+            Menu noneM = new Menu(MenuType.MenuType_None, null);
+            Menu mainM = new Menu(MenuType.MenuType_Main, noneM);
+            menuDictionary.Add(MenuType.MenuType_None, noneM);
+            menuDictionary.Add(MenuType.MenuType_Main, mainM);
         }
 
         private static Dictionary<int, NTexture> GenerateNTextureDictionary(byte[] pmNPBytes)

@@ -7,16 +7,16 @@ namespace GameCore
 {
     public class Menu
     {
-        public Menu()
+        public Menu(MenuType pmType, Menu pmParentMenu)
         {
-
+            type = pmType;
+            parentMenu = pmParentMenu;
         }
 
-        #region declaration
-        public Menu[] subMenus;
-        public Menu parentMenu;
-
+        #region declaration        
         public int selectedIndex = 0;
+        public MenuType type = MenuType.MenuType_Main;
+        public Menu parentMenu;
         #endregion
 
         #region business
@@ -26,6 +26,7 @@ namespace GameCore
 
     public enum MenuType
     {
+        MenuType_None,
         MenuType_Main,
         MenuType_Character,
         MenuType_Item,

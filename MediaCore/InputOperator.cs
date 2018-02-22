@@ -30,22 +30,29 @@ namespace MediaCore
         #region business
         public string GetInputName()
         {
-            if (mainKB.Acquire().IsFailure)
-                return "";
+            try
+            {
+                if (mainKB.Acquire().IsFailure)
+                    return "";
 
-            if (mainKB.Poll().IsFailure)
-                return "";
+                if (mainKB.Poll().IsFailure)
+                    return "";
 
-            KeyboardState state = mainKB.GetCurrentState();
-            if (Result.Last.IsFailure)
-                return "";
+                KeyboardState state = mainKB.GetCurrentState();
+                if (Result.Last.IsFailure)
+                    return "";
 
-            if(state.PressedKeys.Count==0)
+                if (state.PressedKeys.Count == 0)
+                {
+                    return "";
+                }
+
+                return state.PressedKeys[0].ToString();
+            }
+            catch (Exception)
             {
                 return "";
             }
-
-            return state.PressedKeys[0].ToString();
         }
         #endregion
     }

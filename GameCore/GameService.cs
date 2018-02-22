@@ -110,248 +110,26 @@ namespace GameCore
             string inputName = controller.GetInputName();
             if (inputName != "")
             {
-                if (inputName == "Escape")
-                {
-                    ForceShutdown();
-                    return;
-                }
                 switch (runtimeState)
                 {
                     case RuntimeState.RuntimeState_World:
                         {
-                            switch (inputName)
-                            {
-                                case "E":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                                        break;
-                                    }
-                                case "D":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                                        break;
-                                    }
-                                case "S":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "F":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "UpArrow":
-                                    {
-                                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY - 1))
-                                        {
-                                            mainPlayer.playerWorldUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerWorldUnit.FaceUp();
-                                        }
-                                        break;
-                                    }
-                                case "DownArrow":
-                                    {
-                                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY + 1))
-                                        {
-                                            mainPlayer.playerWorldUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerWorldUnit.FaceDown();
-                                        }
-                                        break;
-                                    }
-                                case "LeftArrow":
-                                    {
-                                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX - 1, mainPlayer.playerWorldUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerWorldUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerWorldUnit.FaceLeft();
-                                        }
-                                        break;
-                                    }
-                                case "RightArrow":
-                                    {
-                                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX + 1, mainPlayer.playerWorldUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerWorldUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerWorldUnit.FaceRight();
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        break;
-                                    }
-                            }
+                            HandleWorldInput(inputName);
                             break;
                         }
                     case RuntimeState.RuntimeState_Scene:
                         {
-                            switch (inputName)
-                            {
-                                case "E":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                                        break;
-                                    }
-                                case "D":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                                        break;
-                                    }
-                                case "S":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "F":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "UpArrow":
-                                    {
-                                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1))
-                                        {
-                                            mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerSceneUnit.FaceUp();
-                                        }
-                                        break;
-                                    }
-                                case "DownArrow":
-                                    {
-                                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1))
-                                        {
-                                            mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerSceneUnit.FaceDown();
-                                        }
-                                        break;
-                                    }
-                                case "LeftArrow":
-                                    {
-                                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerSceneUnit.FaceLeft();
-                                        }
-                                        break;
-                                    }
-                                case "RightArrow":
-                                    {
-                                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerSceneUnit.FaceRight();
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        break;
-                                    }
-                            }
+                            HandleSceneInput(inputName);
                             break;
                         }
                     case RuntimeState.RuntimeState_Battle:
                         {
-                            switch (inputName)
-                            {
-                                case "E":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                                        break;
-                                    }
-                                case "D":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                                        break;
-                                    }
-                                case "S":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "F":
-                                    {
-                                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                                        break;
-                                    }
-                                case "UpArrow":
-                                    {
-                                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY - 1))
-                                        {
-                                            mainPlayer.playerBattleUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerBattleUnit.FaceUp();
-                                        }
-                                        break;
-                                    }
-                                case "DownArrow":
-                                    {
-                                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY + 1))
-                                        {
-                                            mainPlayer.playerBattleUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerBattleUnit.FaceDown();
-                                        }
-                                        break;
-                                    }
-                                case "LeftArrow":
-                                    {
-                                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX - 1, mainPlayer.playerBattleUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerBattleUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerBattleUnit.FaceLeft();
-                                        }
-                                        break;
-                                    }
-                                case "RightArrow":
-                                    {
-                                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX + 1, mainPlayer.playerBattleUnit.coordinateY))
-                                        {
-                                            mainPlayer.playerBattleUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"));
-                                        }
-                                        else
-                                        {
-                                            mainPlayer.playerBattleUnit.FaceRight();
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        break;
-                                    }
-                            }
+                            HandleBattleInput(inputName);
+                            break;
+                        }
+                    case RuntimeState.RuntimeState_Menu:
+                        {
+                            HandleMenuInput(inputName);
                             break;
                         }
                     default:
@@ -359,6 +137,339 @@ namespace GameCore
                             break;
                         }
                 }
+            }
+        }
+
+        private void HandleWorldInput(string pmInputName)
+        {
+            switch (pmInputName)
+            {
+                case "Escape":
+                    {
+                        switch (activeMenu.type)
+                        {
+                            case MenuType.MenuType_None:
+                                {
+                                    activeMenu = ResourceManager.menuDictionary[MenuType.MenuType_Main];
+                                    activeMenu.selectedIndex = 0;
+                                    break;
+                                }
+                            default:
+                                {
+                                    break;
+                                }
+                        }
+                        break;
+                    }
+                case "E":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
+                        break;
+                    }
+                case "D":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
+                        break;
+                    }
+                case "S":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "F":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "UpArrow":
+                    {
+                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY - 1))
+                        {
+                            mainPlayer.playerWorldUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerWorldUnit.FaceUp();
+                        }
+                        break;
+                    }
+                case "DownArrow":
+                    {
+                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY + 1))
+                        {
+                            mainPlayer.playerWorldUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerWorldUnit.FaceDown();
+                        }
+                        break;
+                    }
+                case "LeftArrow":
+                    {
+                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX - 1, mainPlayer.playerWorldUnit.coordinateY))
+                        {
+                            mainPlayer.playerWorldUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerWorldUnit.FaceLeft();
+                        }
+                        break;
+                    }
+                case "RightArrow":
+                    {
+                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX + 1, mainPlayer.playerWorldUnit.coordinateY))
+                        {
+                            mainPlayer.playerWorldUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerWorldUnit.FaceRight();
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+        }
+
+        private void HandleSceneInput(string pmInputName)
+        {
+            switch (pmInputName)
+            {
+                case "E":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
+                        break;
+                    }
+                case "D":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
+                        break;
+                    }
+                case "S":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "F":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "UpArrow":
+                    {
+                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1))
+                        {
+                            mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerSceneUnit.FaceUp();
+                        }
+                        break;
+                    }
+                case "DownArrow":
+                    {
+                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1))
+                        {
+                            mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerSceneUnit.FaceDown();
+                        }
+                        break;
+                    }
+                case "LeftArrow":
+                    {
+                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY))
+                        {
+                            mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerSceneUnit.FaceLeft();
+                        }
+                        break;
+                    }
+                case "RightArrow":
+                    {
+                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY))
+                        {
+                            mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerSceneUnit.FaceRight();
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+        }
+
+        private void HandleBattleInput(string pmInputName)
+        {
+            switch (pmInputName)
+            {
+                case "E":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
+                        break;
+                    }
+                case "D":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
+                        break;
+                    }
+                case "S":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "F":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "UpArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY - 1))
+                        {
+                            mainPlayer.playerBattleUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceUp();
+                        }
+                        break;
+                    }
+                case "DownArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY + 1))
+                        {
+                            mainPlayer.playerBattleUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceDown();
+                        }
+                        break;
+                    }
+                case "LeftArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX - 1, mainPlayer.playerBattleUnit.coordinateY))
+                        {
+                            mainPlayer.playerBattleUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceLeft();
+                        }
+                        break;
+                    }
+                case "RightArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX + 1, mainPlayer.playerBattleUnit.coordinateY))
+                        {
+                            mainPlayer.playerBattleUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceRight();
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+        }
+
+        private void HandleMenuInput(string pmInputName)
+        {
+            switch (pmInputName)
+            {
+                case "E":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
+                        break;
+                    }
+                case "D":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
+                        break;
+                    }
+                case "S":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "F":
+                    {
+                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
+                        break;
+                    }
+                case "UpArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY - 1))
+                        {
+                            mainPlayer.playerBattleUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceUp();
+                        }
+                        break;
+                    }
+                case "DownArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY + 1))
+                        {
+                            mainPlayer.playerBattleUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceDown();
+                        }
+                        break;
+                    }
+                case "LeftArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX - 1, mainPlayer.playerBattleUnit.coordinateY))
+                        {
+                            mainPlayer.playerBattleUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceLeft();
+                        }
+                        break;
+                    }
+                case "RightArrow":
+                    {
+                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX + 1, mainPlayer.playerBattleUnit.coordinateY))
+                        {
+                            mainPlayer.playerBattleUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"));
+                        }
+                        else
+                        {
+                            mainPlayer.playerBattleUnit.FaceRight();
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
             }
         }
 
@@ -416,7 +527,8 @@ namespace GameCore
 
         private void HandleDrawing()
         {
-            pen.BeginDraw();
+            pen.BeginDrawing();
+            pen.BeginTextureDrawing();
             switch (runtimeState)
             {
                 case RuntimeState.RuntimeState_World:
@@ -439,7 +551,11 @@ namespace GameCore
                         break;
                     }
             }
-            pen.EndDraw();
+            pen.EndTextureDrawing();
+            pen.BeginHintDrawing();
+            DrawMenu(activeMenu);
+            pen.EndHintDrawing();
+            pen.EndDrawing();
         }
 
         private void DrawMmap()
@@ -721,6 +837,27 @@ namespace GameCore
                 }
             }
         }
+
+        private void DrawMenu(Menu pmTargetMenu)
+        {
+            switch (pmTargetMenu.type)
+            {
+                case MenuType.MenuType_None:
+                    {
+                        break;
+                    }
+                case MenuType.MenuType_Main:
+                    {                        
+                        pen.DrawFrame(0.01f, 0.02f, 0.1f, 0.6f, 0.004f, System.Drawing.Color.Yellow, 1f);
+                        DrawMenu(pmTargetMenu.parentMenu);
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
+            }
+        }
         #endregion
 
         #region Command
@@ -855,13 +992,13 @@ namespace GameCore
             this.mainCamera.ResetCamera(-400, 200);
             this.mainCamera.BindToPlayer();
 
+            this.mainPlayer.EnterWorld();
             //this.player.EnterScene(0, 0);
-            //this.player.playerSceneUnit.SetFixedCoordinate(25, 39);
-            //this.player.EnterWorld();
-            this.mainPlayer.EnterBattle(0);
-            this.mainPlayer.playerBattleUnit.SetFixedCoordinate(25, 39);
+            //this.player.playerSceneUnit.SetFixedCoordinate(25, 39);            
+            //this.mainPlayer.EnterBattle(0);
+            //this.mainPlayer.playerBattleUnit.SetFixedCoordinate(25, 39);
 
-            this.runtimeState = RuntimeState.RuntimeState_Battle;
+            this.runtimeState = RuntimeState.RuntimeState_World;
         }
         #endregion
     }
@@ -875,19 +1012,16 @@ namespace GameCore
 
     public enum RuntimeState
     {
+        RuntimeState_Menu,
         RuntimeState_Welcome,
-        RuntimeState_WelcomeMenu,
         RuntimeState_WelcomeHint,
         RuntimeState_World,
-        RuntimeState_WorldMenu,
         RuntimeState_WorldActing,
         RuntimeState_WorldHint,
         RuntimeState_Scene,
-        RuntimeState_SceneMenu,
         RuntimeState_SceneActing,
         RuntimeState_SceneHint,
         RuntimeState_Battle,
-        RuntimeState_BattleMenu,
         RuntimeState_BattleActing,
         RuntimeState_BattleHint,
     }
