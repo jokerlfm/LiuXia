@@ -3,6 +3,7 @@ using SlimDX.Direct3D9;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 
@@ -14,27 +15,27 @@ namespace MediaCore
         {
             this.clientWidth = pmWidth;
             this.clientHeight = pmHeight;
-            this.white = new SlimDX.Color4(Color.White);
-            this.black = new SlimDX.Color4(Color.Black);
+            this.targetHandle = pmTargetHandle;
+            this.white = new Color4(Color.White);
+            this.black = new Color4(Color.Black);
             Direct3D d3d = new Direct3D();
-            this.mainDevice = new Device(new Direct3D(), 0, DeviceType.Hardware, pmTargetHandle, CreateFlags.HardwareVertexProcessing, new PresentParameters()
+            this.mainDevice = new Device(new Direct3D(), 0, DeviceType.Hardware, targetHandle, CreateFlags.HardwareVertexProcessing, new PresentParameters()
             {
                 BackBufferWidth = pmWidth,
                 BackBufferHeight = pmHeight,
                 Windowed = true
             });
-            this.mainSprite = new Sprite(mainDevice);
-            SlimDX.Matrix zoomMatrix = new SlimDX.Matrix();
-            SlimDX.Matrix.Scaling(pmZoom, pmZoom, 1, out zoomMatrix);
-            this.mainSprite.Transform = zoomMatrix;
+            this.unitSprite = new Sprite(mainDevice);
+            //Matrix zoomMatrix = new SlimDX.Matrix();
+            //Matrix.Scaling(pmZoom, pmZoom, 1, out zoomMatrix);            
+            //this.textureSprite.Transform = zoomMatrix;
 
-            //factory2D = new SlimDX.Direct2D.Factory();
-            //rt2D = new SlimDX.Direct2D.WindowRenderTarget(factory2D, new SlimDX.Direct2D.WindowRenderTargetProperties
-            //{
-            //    Handle = pmTargetHandle,
-            //    PixelSize = new Size(pmWidth, pmHeight)
-            //});
-            //brush2D = new SlimDX.Direct2D.SolidColorBrush(rt2D, new Color4(0.93f, 0.40f, 0.08f));
+            menuSprite = new Sprite(mainDevice);
+            string fontPath = AppDomain.CurrentDomain.BaseDirectory + "resource\\font.ttc";
+            PrivateFontCollection pfc = new PrivateFontCollection();
+            pfc.AddFontFile(fontPath);
+            System.Drawing.Font fileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.025f);
+            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, fileFont);
         }
 
         #region declaratoin
@@ -42,10 +43,13 @@ namespace MediaCore
         public SlimDX.Direct2D.WindowRenderTarget rt2D;
         public SlimDX.Direct2D.Brush brush2D;
         public Device mainDevice;
-        public Sprite mainSprite;
-        SlimDX.Color4 white;
-        SlimDX.Color4 black;
+        public Sprite unitSprite;
+        public Sprite menuSprite;
+        Color4 white;
+        Color4 black;
+        SlimDX.Direct3D9.Font menuTCFont;
         public int clientWidth = 0, clientHeight = 0;
+        public IntPtr targetHandle;
         #endregion
 
         #region business
@@ -59,51 +63,94 @@ namespace MediaCore
                 BackBufferHeight = pmHeight,
                 Windowed = true
             });
-        }
 
+            string fontPath = AppDomain.CurrentDomain.BaseDirectory + "resource\\font.ttc";
+            PrivateFontCollection pfc = new PrivateFontCollection();
+            pfc.AddFontFile(fontPath);
+            System.Drawing.Font fileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.025f);
+            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, fileFont);
+        }
+        
         public void BeginDrawing()
         {
             mainDevice.BeginScene();
             mainDevice.Clear(ClearFlags.Target, black, 0f, 0);
-            //rt2D.BeginDraw();
         }
 
-        public void BeginTextureDrawing()
+        public void EndDrawing()
         {
-            mainSprite.Begin(SpriteFlags.AlphaBlend);
+            mainDevice.EndScene();
+            mainDevice.Present();
         }
 
-        public void BeginHintDrawing()
+        public void BeginUnitDrawing()
         {
+            unitSprite.Begin(SpriteFlags.AlphaBlend);
+        }
 
+        public void EndUnitDrawing()
+        {
+            unitSprite.End();
+        }
+
+        public void BeginMenuDrawing()
+        {
+            menuSprite.Begin(SpriteFlags.AlphaBlend);
+        }
+
+        public void EndMenuDrawing()
+        {
+            menuSprite.End();
+        }
+
+        public void DrawText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
+        {
+            int screenPosX = (int)(pmScreenPosRateX * clientWidth);
+            int screenPosY = (int)(pmScreenPosRateY * clientHeight);
+
+            this.menuTCFont.DrawString(menuSprite, pmText, screenPosX, screenPosY, pmColor);
         }
 
         public void DrawBytes(byte[] pmBytes, int pmPosX, int pmPosY, int pmGapX, int pmGapY, int pmWidth, int pmHeight)
         {
             Texture t = Texture.FromMemory(mainDevice, pmBytes);
             Rectangle r = new Rectangle(pmPosX + pmGapX, pmPosY + pmGapY, pmWidth, pmHeight);
-            mainSprite.Draw(t, r, white);
+            unitSprite.Draw(t, r, white);
             t.Dispose();
         }
 
         public void DrawTexture(Texture pmTexture, float pmCameraPosX, float pmCameraPosY, float pmScreenPosX, float pmScreenPosY)
         {
-            mainSprite.Draw(pmTexture, null, new SlimDX.Vector3(pmCameraPosX, pmCameraPosY, 0f), new SlimDX.Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
+            unitSprite.Draw(pmTexture, null, new SlimDX.Vector3(pmCameraPosX, pmCameraPosY, 0f), new SlimDX.Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
+        }
+
+        public void DrawRoundedCornerFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
+        {
+            float thickSize = clientWidth * pmThickRate;
+            float startScreenPosX = clientWidth * pmPosRateX;
+            float startScreenPosY = clientHeight * pmPosRateY;
+            float screenWidth = clientWidth * pmWidthRate;
+            float screenHeight = clientHeight * pmHeightRate;
+
+            DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY, startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY + thickSize, startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth - thickSize, startScreenPosY + screenHeight, pmColor, pmSolid);
+
         }
 
         public void DrawFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
         {
-            DrawPixelCircle(400, 400, 200, (float)Math.PI / 4, (float)Math.PI / 2, Color.Yellow, 1f);
-            //float thickSize = clientWidth * pmThickRate;
-            //float startScreenPosX = clientWidth * pmPosRateX;
-            //float startScreenPosY = clientHeight * pmPosRateY;
-            //float screenWidth = clientWidth * pmWidthRate;
-            //float screenHeight = clientHeight * pmHeightRate;
+            float thickSize = clientWidth * pmThickRate;
+            float startScreenPosX = clientWidth * pmPosRateX;
+            float startScreenPosY = clientHeight * pmPosRateY;
+            float screenWidth = clientWidth * pmWidthRate;
+            float screenHeight = clientHeight * pmHeightRate;
 
-            //DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY, startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, pmColor, pmSolid);
-            //DrawPixelRectangle(startScreenPosX, startScreenPosY + thickSize, startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            //DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            //DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth - thickSize, startScreenPosY + screenHeight, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY, startScreenPosX + screenWidth, startScreenPosY + thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY + thickSize, startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight, pmColor, pmSolid);
 
         }
 
@@ -137,73 +184,13 @@ namespace MediaCore
             List<Vertex> allCircleVertexes = new List<Vertex>();
             Vertex centerVertex = new Vertex(new Vector4(pmCenterScreenPosX, pmCenterScreenPosY, 0f, pmSolid), pmColor.ToArgb());
             allCircleVertexes.Add(centerVertex);
-            //Vertex testVertex1 = new Vertex(new Vector4(pmCenterScreenPosX, pmCenterScreenPosY - 100, 0f, pmSolid), pmColor.ToArgb());
-            //allCircleVertexes.Add(testVertex1);
-            //Vertex testVertex2 = new Vertex(new Vector4(pmCenterScreenPosX + 100, pmCenterScreenPosY - 100, 0f, pmSolid), pmColor.ToArgb());
-            //allCircleVertexes.Add(testVertex2);
-            //Vertex testVertex3 = new Vertex(new Vector4(pmCenterScreenPosX + 100, pmCenterScreenPosY, 0f, pmSolid), pmColor.ToArgb());
-            //allCircleVertexes.Add(testVertex3);
-            //var vertices = new VertexBuffer(mainDevice, allCircleVertexes.Count * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
-            //DataStream dsVertices = vertices.Lock(0, 0, LockFlags.None);
-            //foreach (Vertex eachV in allCircleVertexes)
-            //{
-            //    dsVertices.Write(eachV.GetAllBytes(), 0, 20);
-            //}
-            //vertices.Unlock();
-
-            //var vertexElems = new[] {
-            //    new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
-            //    new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
-            //    VertexElement.VertexDeclarationEnd
-            //};
-
-            //var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
-
-            //mainDevice.SetStreamSource(0, vertices, 0, 20);
-            //mainDevice.VertexDeclaration = vertexDecl;
-            //mainDevice.DrawPrimitives(PrimitiveType.TriangleFan, 0, allCircleVertexes.Count - 2);
-
-            for (float checkRelativeY = 0; checkRelativeY < pmRadius; checkRelativeY += 1)
+            for (float checkAngle = pmStartAngle; checkAngle <= pmEndAngle; checkAngle += 0.01f)
             {
-                float checkAngle = checkRelativeY / pmRadius;
-                if (checkAngle >= pmStartAngle && checkAngle < pmEndAngle)
-                {
-                    float checkRelativeX = (float)Math.Sqrt(radius2 - checkRelativeY * checkRelativeY);
-                    Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX + checkRelativeX, pmCenterScreenPosY + checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
-                    allCircleVertexes.Add(eachVertex);
-                }
+                float checkRelativeX = (float)(pmRadius * Math.Cos(checkAngle));
+                float checkRelativeY = (float)(pmRadius * Math.Sin(checkAngle));
+                Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX + checkRelativeX, pmCenterScreenPosY + checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
+                allCircleVertexes.Add(eachVertex);
             }
-            for (float checkRelativeY = pmRadius; checkRelativeY > 0; checkRelativeY -= 1)
-            {
-                float checkAngle = (float)(checkRelativeY / pmRadius + Math.PI / 2);
-                if (checkAngle >= pmStartAngle && checkAngle < pmEndAngle)
-                {
-                    float checkRelativeX = (float)Math.Sqrt(radius2 - checkRelativeY * checkRelativeY);
-                    Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX - checkRelativeX, pmCenterScreenPosY + checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
-                    allCircleVertexes.Add(eachVertex);
-                }
-            }
-            for (float checkRelativeY = 0; checkRelativeY < pmRadius; checkRelativeY += 1)
-            {
-                float checkAngle = (float)(checkRelativeY / pmRadius + Math.PI);
-                if (checkAngle >= pmStartAngle && checkAngle < pmEndAngle)
-                {
-                    float checkRelativeX = (float)Math.Sqrt(radius2 - checkRelativeY * checkRelativeY);
-                    Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX - checkRelativeX, pmCenterScreenPosY - checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
-                    allCircleVertexes.Add(eachVertex);
-                }
-            }
-            for (float checkRelativeY = pmRadius; checkRelativeY > 0; checkRelativeY -= 1)
-            {
-                float checkAngle = (float)(checkRelativeY / pmRadius + Math.PI * 3 / 2);
-                if (checkAngle >= pmStartAngle && checkAngle < pmEndAngle)
-                {
-                    float checkRelativeX = (float)Math.Sqrt(radius2 - checkRelativeY * checkRelativeY);
-                    Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX + checkRelativeX, pmCenterScreenPosY - checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
-                    allCircleVertexes.Add(eachVertex);
-                }
-            }
-
             var vertices = new VertexBuffer(mainDevice, allCircleVertexes.Count * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
             DataStream dsVertices = vertices.Lock(0, 0, LockFlags.None);
             foreach (Vertex eachV in allCircleVertexes)
@@ -222,7 +209,7 @@ namespace MediaCore
 
             mainDevice.SetStreamSource(0, vertices, 0, 20);
             mainDevice.VertexDeclaration = vertexDecl;
-            mainDevice.DrawPrimitives(PrimitiveType.TriangleFan, 0, allCircleVertexes.Count-2);
+            mainDevice.DrawPrimitives(PrimitiveType.TriangleFan, 0, allCircleVertexes.Count);
         }
 
         public void DrawRateRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, float pmThickRate, Color pmColor, float pmSolid)
@@ -253,22 +240,6 @@ namespace MediaCore
             mainDevice.SetStreamSource(0, vertices, 0, 20);
             mainDevice.VertexDeclaration = vertexDecl;
             mainDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, 2);
-        }
-
-        public void EndTextureDrawing()
-        {
-            mainSprite.End();
-        }
-
-        public void EndHintDrawing()
-        {
-            mainDevice.EndScene();
-            mainDevice.Present();
-        }
-
-        public void EndDrawing()
-        {
-
         }
 
         public Texture CreateTexture(byte[] pmBytes, int pmWidth, int pmHeight)

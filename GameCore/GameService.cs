@@ -30,6 +30,7 @@ namespace GameCore
         public Menu activeMenu;
         public int currentSmapID = 0;
         public int currentWmapID = 0;
+        public bool isFullScreen = false;
         #endregion
 
         #region business
@@ -96,7 +97,10 @@ namespace GameCore
                 this.UpdatePlayer(timeElapsed);
                 this.UpdateCamera(timeElapsed);
 
-                HandleDrawing();
+                pen.BeginDrawing();
+                DrawUnits();
+                DrawMenus();
+                pen.EndDrawing();
 
                 dtPrevUpdateTime = DateTime.Now;
                 Thread.Sleep(10);
@@ -107,368 +111,346 @@ namespace GameCore
 
         private void HandleInput()
         {
-            string inputName = controller.GetInputName();
-            if (inputName != "")
+            string pressingKeyName = "";
+            string releasedKeyName = "";
+            if (controller.GetKeyName(out pressingKeyName, out releasedKeyName))
             {
-                switch (runtimeState)
+                if (runtimeState == RuntimeState.RuntimeState_World)
                 {
-                    case RuntimeState.RuntimeState_World:
+                    HandleWorldFreeInput(pressingKeyName, releasedKeyName);
+                }
+                else if (runtimeState == RuntimeState.RuntimeState_Scene)
+                {
+                    HandleSceneFreeInput(pressingKeyName, releasedKeyName);
+                }
+                else if (runtimeState == RuntimeState.RuntimeState_Battle_Menu)
+                {
+                    HandleBattleMenuInput(releasedKeyName);
+                }
+                else if (runtimeState == RuntimeState.RuntimeState_Welcome_Menu || runtimeState == RuntimeState.RuntimeState_World_Menu ||
+                    runtimeState == RuntimeState.RuntimeState_Scene_Menu || runtimeState == RuntimeState.RuntimeState_Battle_Menu)
+                {
+                    HandleMenuInput(releasedKeyName);
+                }
+            }
+        }
+
+        private void HandleWorldFreeInput(string pmPressingKeyName, string pmReleasedKeyName)
+        {
+            if (pmReleasedKeyName == "Escape")
+            {
+                activeMenu = ResourceManager.menuDictionary[MenuType.MenuType_Main];
+                activeMenu.subSelectedIndex = 0;
+                runtimeState = RuntimeState.RuntimeState_World_Menu;
+                return;
+            }
+            else
+            {
+                switch (pmPressingKeyName)
+                {
+                    case "UpArrow":
                         {
-                            HandleWorldInput(inputName);
-                            break;
+                            if (!mainPlayer.playerWorldUnit.moving)
+                            {
+                                if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY - 1))
+                                {
+                                    mainPlayer.playerWorldUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerWorldUnit.FaceUp();
+                                }
+                            }
+                            return;
                         }
-                    case RuntimeState.RuntimeState_Scene:
+                    case "DownArrow":
                         {
-                            HandleSceneInput(inputName);
-                            break;
+                            if (!mainPlayer.playerWorldUnit.moving)
+                            {
+                                if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY + 1))
+                                {
+                                    mainPlayer.playerWorldUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerWorldUnit.FaceDown();
+                                }
+                            }
+                            return;
                         }
-                    case RuntimeState.RuntimeState_Battle:
+                    case "LeftArrow":
                         {
-                            HandleBattleInput(inputName);
-                            break;
+                            if (!mainPlayer.playerWorldUnit.moving)
+                            {
+                                if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX - 1, mainPlayer.playerWorldUnit.coordinateY))
+                                {
+                                    mainPlayer.playerWorldUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerWorldUnit.FaceLeft();
+                                }
+                            }
+                            return;
                         }
-                    case RuntimeState.RuntimeState_Menu:
+                    case "RightArrow":
                         {
-                            HandleMenuInput(inputName);
-                            break;
+                            if (!mainPlayer.playerWorldUnit.moving)
+                            {
+                                if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX + 1, mainPlayer.playerWorldUnit.coordinateY))
+                                {
+                                    mainPlayer.playerWorldUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerWorldUnit.FaceRight();
+                                }
+                            }
+                            return;
                         }
                     default:
                         {
-                            break;
+                            return;
                         }
                 }
             }
         }
 
-        private void HandleWorldInput(string pmInputName)
+        private void HandleSceneFreeInput(string pmPressingKeyName, string pmReleasedKeyName)
         {
-            switch (pmInputName)
+            if (pmReleasedKeyName == "Escape")
+            {
+                activeMenu = ResourceManager.menuDictionary[MenuType.MenuType_Main];
+                activeMenu.subSelectedIndex = 0;
+                runtimeState = RuntimeState.RuntimeState_Scene_Menu;
+                return;
+            }
+            else
+            {
+                switch (pmPressingKeyName)
+                {
+                    case "UpArrow":
+                        {
+                            if (!mainPlayer.playerSceneUnit.moving)
+                            {
+                                if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1))
+                                {
+                                    mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerSceneUnit.FaceUp();
+                                }
+                            }
+                            return;
+                        }
+                    case "DownArrow":
+                        {
+                            if (!mainPlayer.playerSceneUnit.moving)
+                            {
+                                if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1))
+                                {
+                                    mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerSceneUnit.FaceDown();
+                                }
+                            }
+                            return;
+                        }
+                    case "LeftArrow":
+                        {
+                            if (!mainPlayer.playerSceneUnit.moving)
+                            {
+                                if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY))
+                                {
+                                    mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerSceneUnit.FaceLeft();
+                                }
+                            }
+                            return;
+                        }
+                    case "RightArrow":
+                        {
+                            if (!mainPlayer.playerSceneUnit.moving)
+                            {
+                                if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY))
+                                {
+                                    mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                }
+                                else
+                                {
+                                    mainPlayer.playerSceneUnit.FaceRight();
+                                }
+                            }
+                            return;
+                        }
+                    default:
+                        {
+                            return;
+                        }
+                }
+            }
+        }
+
+        private void HandleBattleMenuInput(string pmReleasedKeyName)
+        {
+
+        }
+
+        private void HandleMenuInput(string pmReleasedKeyName)
+        {
+            switch (pmReleasedKeyName)
             {
                 case "Escape":
                     {
+                        activeMenu = activeMenu.parentMenu;
+                        if (activeMenu.type == MenuType.MenuType_None)
+                        {
+                            if (runtimeState == RuntimeState.RuntimeState_World_Menu)
+                            {
+                                runtimeState = RuntimeState.RuntimeState_World;
+                            }
+                            else if (runtimeState == RuntimeState.RuntimeState_Scene_Menu)
+                            {
+                                runtimeState = RuntimeState.RuntimeState_Scene;
+                            }
+                        }
+                        return;
+                    }
+                case "Space":
+                    {
                         switch (activeMenu.type)
                         {
-                            case MenuType.MenuType_None:
+                            case MenuType.MenuType_Main:
                                 {
-                                    activeMenu = ResourceManager.menuDictionary[MenuType.MenuType_Main];
-                                    activeMenu.selectedIndex = 0;
-                                    break;
+                                    switch (activeMenu.subMenuList[activeMenu.subSelectedIndex].type)
+                                    {
+                                        case MenuType.MenuType_System:
+                                            {
+                                                activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
+                                                activeMenu.subSelectedIndex = 0;
+                                                return;
+                                            }
+                                        default:
+                                            {
+                                                return;
+                                            }
+                                    }
+                                }
+                            case MenuType.MenuType_System:
+                                {
+                                    switch (activeMenu.subMenuList[activeMenu.subSelectedIndex].type)
+                                    {
+                                        case MenuType.MenuType_Quit:
+                                            {
+                                                activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
+                                                activeMenu.subSelectedIndex = 0;
+                                                return;
+                                            }
+                                        default:
+                                            {
+                                                return;
+                                            }
+                                    }
+                                }
+                            case MenuType.MenuType_Quit:
+                                {
+                                    switch (activeMenu.subMenuList[activeMenu.subSelectedIndex].type)
+                                    {
+                                        case MenuType.MenuType_Quit_Yes:
+                                            {
+                                                this.ForceShutdown();
+                                                return;
+                                            }
+                                        case MenuType.MenuType_Quit_No:
+                                            {
+                                                this.activeMenu = this.activeMenu.parentMenu;
+                                                return;
+                                            }
+                                        default:
+                                            {
+                                                return;
+                                            }
+                                    }
                                 }
                             default:
                                 {
-                                    break;
+                                    return;
                                 }
                         }
-                        break;
-                    }
-                case "E":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                        break;
-                    }
-                case "D":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                        break;
-                    }
-                case "S":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "F":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                        break;
                     }
                 case "UpArrow":
                     {
-                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY - 1))
+                        if (activeMenu.subMenuList.Count > 0)
                         {
-                            mainPlayer.playerWorldUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                            activeMenu.subSelectedIndex--;
+                            if (activeMenu.subSelectedIndex < 0)
+                            {
+                                activeMenu.subSelectedIndex = activeMenu.subMenuList.Count - 1;
+                            }
                         }
                         else
                         {
-                            mainPlayer.playerWorldUnit.FaceUp();
+                            // handle special menu items
                         }
-                        break;
+                        return;
                     }
                 case "DownArrow":
                     {
-                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY + 1))
+                        if (activeMenu.subMenuList.Count > 0)
                         {
-                            mainPlayer.playerWorldUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                            activeMenu.subSelectedIndex++;
+                            if (activeMenu.subSelectedIndex >= activeMenu.subMenuList.Count)
+                            {
+                                activeMenu.subSelectedIndex = 0;
+                            }
                         }
                         else
                         {
-                            mainPlayer.playerWorldUnit.FaceDown();
+                            // handle special menu items
                         }
-                        break;
+                        return;
                     }
                 case "LeftArrow":
                     {
-                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX - 1, mainPlayer.playerWorldUnit.coordinateY))
+                        if (activeMenu.subMenuList.Count > 0)
                         {
-                            mainPlayer.playerWorldUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                            activeMenu.subSelectedIndex--;
+                            if (activeMenu.subSelectedIndex < 0)
+                            {
+                                activeMenu.subSelectedIndex = activeMenu.subMenuList.Count - 1;
+                            }
                         }
                         else
                         {
-                            mainPlayer.playerWorldUnit.FaceLeft();
+                            // handle special menu items
                         }
-                        break;
+                        return;
                     }
                 case "RightArrow":
                     {
-                        if (ResourceManager.mainMap.Movable(mainPlayer.playerWorldUnit.coordinateX + 1, mainPlayer.playerWorldUnit.coordinateY))
+                        if (activeMenu.subMenuList.Count > 0)
                         {
-                            mainPlayer.playerWorldUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                            activeMenu.subSelectedIndex++;
+                            if (activeMenu.subSelectedIndex >= activeMenu.subMenuList.Count)
+                            {
+                                activeMenu.subSelectedIndex = 0;
+                            }
                         }
                         else
                         {
-                            mainPlayer.playerWorldUnit.FaceRight();
+                            // handle special menu items
                         }
-                        break;
+                        return;
                     }
                 default:
                     {
-                        break;
-                    }
-            }
-        }
-
-        private void HandleSceneInput(string pmInputName)
-        {
-            switch (pmInputName)
-            {
-                case "E":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                        break;
-                    }
-                case "D":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                        break;
-                    }
-                case "S":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "F":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "UpArrow":
-                    {
-                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1))
-                        {
-                            mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerSceneUnit.FaceUp();
-                        }
-                        break;
-                    }
-                case "DownArrow":
-                    {
-                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1))
-                        {
-                            mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerSceneUnit.FaceDown();
-                        }
-                        break;
-                    }
-                case "LeftArrow":
-                    {
-                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY))
-                        {
-                            mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerSceneUnit.FaceLeft();
-                        }
-                        break;
-                    }
-                case "RightArrow":
-                    {
-                        if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY))
-                        {
-                            mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerSceneUnit.FaceRight();
-                        }
-                        break;
-                    }
-                default:
-                    {
-                        break;
-                    }
-            }
-        }
-
-        private void HandleBattleInput(string pmInputName)
-        {
-            switch (pmInputName)
-            {
-                case "E":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                        break;
-                    }
-                case "D":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                        break;
-                    }
-                case "S":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "F":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "UpArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY - 1))
-                        {
-                            mainPlayer.playerBattleUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceUp();
-                        }
-                        break;
-                    }
-                case "DownArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY + 1))
-                        {
-                            mainPlayer.playerBattleUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceDown();
-                        }
-                        break;
-                    }
-                case "LeftArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX - 1, mainPlayer.playerBattleUnit.coordinateY))
-                        {
-                            mainPlayer.playerBattleUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceLeft();
-                        }
-                        break;
-                    }
-                case "RightArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX + 1, mainPlayer.playerBattleUnit.coordinateY))
-                        {
-                            mainPlayer.playerBattleUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceRight();
-                        }
-                        break;
-                    }
-                default:
-                    {
-                        break;
-                    }
-            }
-        }
-
-        private void HandleMenuInput(string pmInputName)
-        {
-            switch (pmInputName)
-            {
-                case "E":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() - 100, 100);
-                        break;
-                    }
-                case "D":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX(), mainCamera.GetValidPositionY() + 100, 100);
-                        break;
-                    }
-                case "S":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() - 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "F":
-                    {
-                        mainCamera.MoveTo(mainCamera.GetValidPositionX() + 100, mainCamera.GetValidPositionY(), 100);
-                        break;
-                    }
-                case "UpArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY - 1))
-                        {
-                            mainPlayer.playerBattleUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceUp();
-                        }
-                        break;
-                    }
-                case "DownArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX, mainPlayer.playerBattleUnit.coordinateY + 1))
-                        {
-                            mainPlayer.playerBattleUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceDown();
-                        }
-                        break;
-                    }
-                case "LeftArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX - 1, mainPlayer.playerBattleUnit.coordinateY))
-                        {
-                            mainPlayer.playerBattleUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceLeft();
-                        }
-                        break;
-                    }
-                case "RightArrow":
-                    {
-                        if (ResourceManager.battleMapDictionary[currentWmapID].Movable(mainPlayer.playerBattleUnit.coordinateX + 1, mainPlayer.playerBattleUnit.coordinateY))
-                        {
-                            mainPlayer.playerBattleUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"));
-                        }
-                        else
-                        {
-                            mainPlayer.playerBattleUnit.FaceRight();
-                        }
-                        break;
-                    }
-                default:
-                    {
-                        break;
+                        return;
                     }
             }
         }
@@ -484,7 +466,7 @@ namespace GameCore
                             mainPlayer.playerWorldUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / ConfigHandler.GetConfigValue_float("zoom") / 2), (int)(mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / ConfigHandler.GetConfigValue_float("zoom") / 2));
+                                mainCamera.ResetCamera((int)(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / 2));
                             }
                         }
                         break;
@@ -496,7 +478,7 @@ namespace GameCore
                             mainPlayer.playerSceneUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / ConfigHandler.GetConfigValue_float("zoom") / 2), (int)(mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / ConfigHandler.GetConfigValue_float("zoom") / 2));
+                                mainCamera.ResetCamera((int)(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / 2));
                             }
                         }
                         break;
@@ -506,7 +488,7 @@ namespace GameCore
                         if (mainPlayer.playerBattleUnit.moving)
                         {
                             mainPlayer.playerBattleUnit.UpdateMoving(pmTimeElapsed);
-                            mainCamera.ResetCamera((int)(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / ConfigHandler.GetConfigValue_float("zoom") / 2), (int)(mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / ConfigHandler.GetConfigValue_float("zoom") / 2));
+                            mainCamera.ResetCamera((int)(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / 2));
                         }
                         break;
                     }
@@ -525,43 +507,28 @@ namespace GameCore
             }
         }
 
-        private void HandleDrawing()
+        private void DrawUnits()
         {
-            pen.BeginDrawing();
-            pen.BeginTextureDrawing();
-            switch (runtimeState)
+            pen.BeginUnitDrawing();
+            if (runtimeState == RuntimeState.RuntimeState_World || runtimeState == RuntimeState.RuntimeState_WorldActing || runtimeState == RuntimeState.RuntimeState_WorldHint || runtimeState == RuntimeState.RuntimeState_World_Menu)
             {
-                case RuntimeState.RuntimeState_World:
-                    {
-                        DrawMmap();
-                        break;
-                    }
-                case RuntimeState.RuntimeState_Scene:
-                    {
-                        DrawSmap();
-                        break;
-                    }
-                case RuntimeState.RuntimeState_Battle:
-                    {
-                        DrawWmap();
-                        break;
-                    }
-                default:
-                    {
-                        break;
-                    }
+                DrawMmap();
             }
-            pen.EndTextureDrawing();
-            pen.BeginHintDrawing();
-            DrawMenu(activeMenu);
-            pen.EndHintDrawing();
-            pen.EndDrawing();
+            else if (runtimeState == RuntimeState.RuntimeState_Scene || runtimeState == RuntimeState.RuntimeState_SceneActing || runtimeState == RuntimeState.RuntimeState_SceneHint || runtimeState == RuntimeState.RuntimeState_Scene_Menu)
+            {
+                DrawSmap();
+            }
+            else if (runtimeState == RuntimeState.RuntimeState_Battle || runtimeState == RuntimeState.RuntimeState_BattleActing || runtimeState == RuntimeState.RuntimeState_BattleHint || runtimeState == RuntimeState.RuntimeState_Battle_Menu)
+            {
+                DrawWmap();
+            }
+            pen.EndUnitDrawing();
         }
 
         private void DrawMmap()
         {
-            int minX = mainPlayer.playerWorldUnit.coordinateX - 30, maxX = mainPlayer.playerWorldUnit.coordinateX + 30;
-            int minY = mainPlayer.playerWorldUnit.coordinateY - 30, maxY = mainPlayer.playerWorldUnit.coordinateY + 30;
+            int minX = mainPlayer.playerWorldUnit.coordinateX - 25, maxX = mainPlayer.playerWorldUnit.coordinateX + 25;
+            int minY = mainPlayer.playerWorldUnit.coordinateY - 25, maxY = mainPlayer.playerWorldUnit.coordinateY + 25;
             if (minX < 0)
             {
                 minX = 0;
@@ -838,23 +805,78 @@ namespace GameCore
             }
         }
 
+        private void DrawMenus()
+        {
+            pen.BeginMenuDrawing();
+            DrawMenu(activeMenu);
+            pen.EndMenuDrawing();
+        }
+
         private void DrawMenu(Menu pmTargetMenu)
         {
             switch (pmTargetMenu.type)
             {
                 case MenuType.MenuType_None:
                     {
-                        break;
+                        return;
                     }
                 case MenuType.MenuType_Main:
-                    {                        
-                        pen.DrawFrame(0.01f, 0.02f, 0.1f, 0.6f, 0.004f, System.Drawing.Color.Yellow, 1f);
-                        DrawMenu(pmTargetMenu.parentMenu);
-                        break;
+                    {
+                        pen.DrawFrame(0.01f, 0.02f, 0.09f, 0.32f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
+                        {
+                            System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
+                            if (subCount == pmTargetMenu.subSelectedIndex)
+                            {
+                                menuItemColor = System.Drawing.Color.Aquamarine;
+                            }
+                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.015f, 0.03f + 0.05f * subCount, menuItemColor);
+                        }
+                        if (pmTargetMenu.drawParents)
+                        {
+                            DrawMenu(pmTargetMenu.parentMenu);
+                        }
+                        return;
+                    }
+                case MenuType.MenuType_System:
+                    {
+                        pen.DrawFrame(0.11f, 0.02f, 0.09f, 0.22f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
+                        {
+                            System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
+                            if (subCount == pmTargetMenu.subSelectedIndex)
+                            {
+                                menuItemColor = System.Drawing.Color.Aquamarine;
+                            }
+                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.115f, 0.03f + 0.05f * subCount, menuItemColor);
+                        }
+                        if (pmTargetMenu.drawParents)
+                        {
+                            DrawMenu(pmTargetMenu.parentMenu);
+                        }
+                        return;
+                    }
+                case MenuType.MenuType_Quit:
+                    {
+                        pen.DrawFrame(0.21f, 0.02f, 0.09f, 0.12f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
+                        {
+                            System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
+                            if (subCount == pmTargetMenu.subSelectedIndex)
+                            {
+                                menuItemColor = System.Drawing.Color.Aquamarine;
+                            }
+                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.215f, 0.03f + 0.05f * subCount, menuItemColor);
+                        }
+                        if (pmTargetMenu.drawParents)
+                        {
+                            DrawMenu(pmTargetMenu.parentMenu);
+                        }
+                        return;
                     }
                 default:
                     {
-                        break;
+                        return;
                     }
             }
         }
@@ -1012,16 +1034,19 @@ namespace GameCore
 
     public enum RuntimeState
     {
-        RuntimeState_Menu,
         RuntimeState_Welcome,
+        RuntimeState_Welcome_Menu,
         RuntimeState_WelcomeHint,
         RuntimeState_World,
+        RuntimeState_World_Menu,
         RuntimeState_WorldActing,
         RuntimeState_WorldHint,
         RuntimeState_Scene,
+        RuntimeState_Scene_Menu,
         RuntimeState_SceneActing,
         RuntimeState_SceneHint,
         RuntimeState_Battle,
+        RuntimeState_Battle_Menu,
         RuntimeState_BattleActing,
         RuntimeState_BattleHint,
     }

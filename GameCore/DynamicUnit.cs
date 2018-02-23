@@ -41,10 +41,6 @@ namespace GameCore
         /// <param name="pmMoveFrameSpeed">frame stay time (ms)</param>
         public void MoveUp(float pmMoveCoordinateSpeed, int pmFrameSpeed)
         {
-            if (moving)
-            {
-                return;
-            }
             this.actGroupIndex = 0;
             this.movingCoordinateX = this.coordinateX;
             this.movingCoordinateY = this.coordinateY;
@@ -63,10 +59,6 @@ namespace GameCore
         /// <param name="pmMoveFrameSpeed">frame stay time (ms)</param>
         public void MoveRight(float pmMoveCoordinateSpeed, int pmFrameSpeed)
         {
-            if (moving)
-            {
-                return;
-            }
             this.actGroupIndex = 1;
             this.movingCoordinateX = this.coordinateX;
             this.movingCoordinateY = this.coordinateY;
@@ -85,10 +77,6 @@ namespace GameCore
         /// <param name="pmMoveFrameSpeed">frame stay time (ms)</param>
         public void MoveLeft(float pmMoveCoordinateSpeed, int pmFrameSpeed)
         {
-            if (moving)
-            {
-                return;
-            }
             this.actGroupIndex = 2;
             this.movingCoordinateX = this.coordinateX;
             this.movingCoordinateY = this.coordinateY;
@@ -107,10 +95,6 @@ namespace GameCore
         /// <param name="pmMoveFrameSpeed">frame stay time (ms)</param>
         public void MoveDown(float pmMoveCoordinateSpeed, int pmFrameSpeed)
         {
-            if (moving)
-            {
-                return;
-            }
             this.actGroupIndex = 3;
             this.movingCoordinateX = this.coordinateX;
             this.movingCoordinateY = this.coordinateY;

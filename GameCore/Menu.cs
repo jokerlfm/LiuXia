@@ -7,16 +7,22 @@ namespace GameCore
 {
     public class Menu
     {
-        public Menu(MenuType pmType, Menu pmParentMenu)
+        public Menu(MenuType pmType, string pmMenuName, Menu pmParentMenu, bool pmDrawParents = false)
         {
             type = pmType;
+            this.menuName = pmMenuName;
             parentMenu = pmParentMenu;
+            this.subMenuList = new List<Menu>();
+            drawParents = pmDrawParents;
         }
 
         #region declaration        
-        public int selectedIndex = 0;
+        public int subSelectedIndex = 0;
         public MenuType type = MenuType.MenuType_Main;
         public Menu parentMenu;
+        public List<Menu> subMenuList;
+        public string menuName = "";
+        public bool drawParents = false;
         #endregion
 
         #region business
@@ -28,10 +34,19 @@ namespace GameCore
     {
         MenuType_None,
         MenuType_Main,
-        MenuType_Character,
-        MenuType_Item,
+
         MenuType_Medical,
         MenuType_Detox,
-        MenuType_System
+        MenuType_Item,
+        MenuType_Status,
+        MenuType_Leave,
+        MenuType_System,
+
+        MenuType_Save,
+        MenuType_Load,
+        MenuType_Full,
+        MenuType_Quit,
+        MenuType_Quit_Yes,
+        MenuType_Quit_No,
     }
 }

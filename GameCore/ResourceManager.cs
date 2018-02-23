@@ -27,6 +27,20 @@ namespace GameCore
 
         public static PlayerData mainPlayerData;
         public static Dictionary<MenuType, Menu> menuDictionary;
+
+        private static int selfIncreaseCount = 0;
+        private static int SelfIncreaseCount
+        {
+            set
+            {
+                selfIncreaseCount = value;
+            }
+            get
+            {
+                selfIncreaseCount++;
+                return selfIncreaseCount - 1;
+            }
+        }
         #endregion
 
         #region business
@@ -39,7 +53,7 @@ namespace GameCore
 
             GameService game = GameService.GetGame();
             game.mainCamera = new CameraUnit();
-            game.mainPlayer = new ActivePlayer();            
+            game.mainPlayer = new ActivePlayer();
             game.activeMenu = menuDictionary[MenuType.MenuType_None];
         }
 
@@ -216,10 +230,54 @@ namespace GameCore
         private static void GenerateMenus()
         {
             menuDictionary = new Dictionary<MenuType, Menu>();
-            Menu noneM = new Menu(MenuType.MenuType_None, null);
-            Menu mainM = new Menu(MenuType.MenuType_Main, noneM);
+            Menu noneM = new Menu(MenuType.MenuType_None, "無", null);
+            Menu mainM = new Menu(MenuType.MenuType_Main, "總", noneM);
+
+            Menu medicalM = new Menu(MenuType.MenuType_Medical, "醫療", mainM, true);
+            Menu detoxM = new Menu(MenuType.MenuType_Detox, "解毒", mainM, true);
+            Menu itemM = new Menu(MenuType.MenuType_Item, "物品", mainM, true);
+            Menu statusM = new Menu(MenuType.MenuType_Status, "狀態", mainM, true);
+            Menu leaveM = new Menu(MenuType.MenuType_Leave, "離隊", mainM, true);
+            Menu systemM = new Menu(MenuType.MenuType_System, "系統", mainM, true);
+
+            Menu saveM = new Menu(MenuType.MenuType_Save, "存檔", systemM, true);
+            Menu loadM = new Menu(MenuType.MenuType_Load, "讀檔", systemM, true);
+            Menu fullM = new Menu(MenuType.MenuType_Full, "全屏", systemM, true);
+            Menu quitM = new Menu(MenuType.MenuType_Quit, "離開", systemM, true);
+
+            Menu quitYM = new Menu(MenuType.MenuType_Quit_Yes, "確定", systemM, true);
+            Menu quitNM = new Menu(MenuType.MenuType_Quit_No, "取消", systemM, true);
+
+            noneM.subMenuList.Add(mainM);
+            mainM.subMenuList.Add(medicalM);
+            mainM.subMenuList.Add(detoxM);
+            mainM.subMenuList.Add(itemM);
+            mainM.subMenuList.Add(statusM);
+            mainM.subMenuList.Add(leaveM);
+            mainM.subMenuList.Add(systemM);
+
+            systemM.subMenuList.Add(saveM);
+            systemM.subMenuList.Add(loadM);
+            systemM.subMenuList.Add(fullM);
+            systemM.subMenuList.Add(quitM);
+
+            quitM.subMenuList.Add(quitYM);
+            quitM.subMenuList.Add(quitNM);
+
             menuDictionary.Add(MenuType.MenuType_None, noneM);
             menuDictionary.Add(MenuType.MenuType_Main, mainM);
+            menuDictionary.Add(MenuType.MenuType_Medical, medicalM);
+            menuDictionary.Add(MenuType.MenuType_Detox, detoxM);
+            menuDictionary.Add(MenuType.MenuType_Item, itemM);
+            menuDictionary.Add(MenuType.MenuType_Status, statusM);
+            menuDictionary.Add(MenuType.MenuType_Leave, leaveM);
+            menuDictionary.Add(MenuType.MenuType_System, systemM);
+            menuDictionary.Add(MenuType.MenuType_Save, saveM);
+            menuDictionary.Add(MenuType.MenuType_Load, loadM);
+            menuDictionary.Add(MenuType.MenuType_Full, fullM);
+            menuDictionary.Add(MenuType.MenuType_Quit, quitM);
+            menuDictionary.Add(MenuType.MenuType_Quit_Yes, quitYM);
+            menuDictionary.Add(MenuType.MenuType_Quit_No, quitNM);
         }
 
         private static Dictionary<int, NTexture> GenerateNTextureDictionary(byte[] pmNPBytes)
@@ -298,16 +356,16 @@ namespace GameCore
                 mainPlayerData.partyMembersArray[7] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 18);
                 for (int itemCount = 0; itemCount < 1000; itemCount++)
                 {
-                    mainPlayerData.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 19 + itemCount * 2);
-                    mainPlayerData.itemsCountArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 20 + itemCount * 2);
+                    mainPlayerData.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 19 + itemCount * 4);
+                    mainPlayerData.itemsCountArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 20 + itemCount * 4);
                 }
                 for (int entryCount = 0; entryCount < totalCharacterCount; entryCount++)
                 {
                     Character eachC = new Character(entryCount);
                     eachC.characterPortrait = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 1);
                     eachC.increaseRate = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 2);
-                    eachC.characterName = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachCharacterSize * entryCount + 2 * 3).Take(10).ToArray());
-                    eachC.characterNickName = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachCharacterSize * entryCount + 2 * 8).Take(10).ToArray());
+                    eachC.characterName = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + 4 + eachCharacterSize * entryCount + 2 * 3).Take(10).ToArray()).Trim('\0');
+                    eachC.characterNickName = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + 4 + eachCharacterSize * entryCount + 2 * 8).Take(10).ToArray()).Trim('\0');
                     eachC.gender = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 13);
                     eachC.level = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 14);
                     eachC.exp = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 15);
@@ -344,7 +402,7 @@ namespace GameCore
                     eachC.trainingEXP = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 46);
                     for (int skillCount = 0; skillCount < eachC.skillsIDArray.Length; skillCount++)
                     {
-                        eachC.skillsIDArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 47 + skillCount * 2);
+                        eachC.skillsIDArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachCharacterSize * entryCount + 2 * 47 + skillCount * 2);
                     }
                     for (int skillCount = 0; skillCount < eachC.skillsIDArray.Length; skillCount++)
                     {
@@ -363,95 +421,97 @@ namespace GameCore
                 for (int entryCount = 0; entryCount < totalItemCount; entryCount++)
                 {
                     Item eachI = new Item(entryCount);
-                    eachI.itemName = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachItemSize * entryCount + 2 * 1).Take(20).ToArray());
-                    eachI.itemAlias = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachItemSize * entryCount + 2 * 21).Take(20).ToArray());
-                    eachI.itemDescription = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachItemSize * entryCount + 2 * 41).Take(30).ToArray());
-                    eachI.itemSkill = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 71);
-                    eachI.hiddenAnimeNumber = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 72);
-                    eachI.user = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 73);
-                    eachI.equipType = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 74);
-                    eachI.showDescription = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 75);
-                    eachI.type = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 76);
-                    eachI.addActiveLife = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 77);
-                    eachI.addMaxLife = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 78);
-                    eachI.addPoisened = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 79);
-                    eachI.addPhysical = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 80);
-                    eachI.changePowerType = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 81);
-                    eachI.addActivePower = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 82);
-                    eachI.addMaxPower = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 83);
-                    eachI.addAttack = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 84);
-                    eachI.addMove = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 85);
-                    eachI.addDefence = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 86);
-                    eachI.addMedical = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 87);
-                    eachI.addTox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 88);
-                    eachI.addDetox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 89);
-                    eachI.addAntiTox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 90);
-                    eachI.addFist = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 91);
-                    eachI.addSword = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 92);
-                    eachI.addBlade = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 93);
-                    eachI.addSpecial = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 94);
-                    eachI.addHidden = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 95);
-                    eachI.addKnowledge = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 96);
-                    eachI.addMoral = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 97);
-                    eachI.addLeftRight = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 98);
-                    eachI.addAttackWithTox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 99);
-                    eachI.forCharacter = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 100);
-                    eachI.needPowerType = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 101);
-                    eachI.needActivePower = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 102);
-                    eachI.needAttack = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 103);
-                    eachI.needMove = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 104);
-                    eachI.needTox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 105);
-                    eachI.needMedical = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 106);
-                    eachI.needDetox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 107);
-                    eachI.needFist = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 108);
-                    eachI.needSword = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 109);
-                    eachI.needBlade = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 110);
-                    eachI.needSpecial = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 111);
-                    eachI.needHidden = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 112);
-                    eachI.needIntelligence = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 113);
-                    eachI.needEXP = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 114);
-                    eachI.itemMakingNeedEXP = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 115);
-                    eachI.needMaterial = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 116);
+                    eachI.itemName = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 1).Take(20).ToArray()).Trim('\0');
+                    eachI.itemAlias = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 11).Take(20).ToArray()).Trim('\0');
+                    eachI.itemDescription = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 21).Take(30).ToArray()).Trim('\0');
+                    selfIncreaseCount = 36;
+                    eachI.itemSkill = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.hiddenAnimeNumber = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.user = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.equipType = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.showDescription = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.type = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addActiveLife = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addMaxLife = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addPoisened = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addPhysical = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.changePowerType = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addActivePower = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addMaxPower = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addAttack = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addMove = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addDefence = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addMedical = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addTox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addDetox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addAntiTox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addFist = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addSword = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addBlade = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addSpecial = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addHidden = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addKnowledge = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addMoral = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addLeftRight = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.addAttackWithTox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.forCharacter = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needPowerType = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needActivePower = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needAttack = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needMove = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needTox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needMedical = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needDetox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needFist = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needSword = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needBlade = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needSpecial = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needHidden = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needIntelligence = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needEXP = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.itemMakingNeedEXP = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
+                    eachI.needMaterial = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
                     for (int itemCount = 0; itemCount < eachI.itemsIDArray.Length; itemCount++)
                     {
-                        eachI.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 117 + itemCount * 2);
+                        eachI.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 82 + itemCount * 2);
                     }
                     for (int itemCount = 0; itemCount < eachI.itemsCountArray.Length; itemCount++)
                     {
-                        eachI.itemsCountArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 122 + itemCount * 2);
+                        eachI.itemsCountArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 87 + itemCount * 2);
                     }
                     itemDictionary.Add(entryCount, eachI);
                 }
                 for (int entryCount = 0; entryCount < totalSkillCount; entryCount++)
                 {
                     Skill eachS = new Skill(entryCount);
-                    eachS.skillName = Encoding.UTF8.GetString(allRangerBytes.Skip(playerLength + 4 + eachItemSize * entryCount + 2 * 1).Take(10).ToArray());
-                    eachS.soundID = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 11);
-                    eachS.skillType = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 12);
-                    eachS.skillAnimeNumber = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 13);
-                    eachS.attackType = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 14);
-                    eachS.attackRange = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 15);
-                    eachS.powerCost = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 16);
-                    eachS.tox = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 17);
+                    eachS.skillName = Encoding.GetEncoding("BIG5").GetString(allRangerBytes.Skip(playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 1).Take(10).ToArray()).Trim('\0');
+                    selfIncreaseCount = 6;
+                    eachS.soundID = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.skillType = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.skillAnimeNumber = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.attackType = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.attackRange = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.powerCost = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
+                    eachS.tox = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * SelfIncreaseCount);
                     for (int skillCount = 0; skillCount < eachS.damageArray.Length; skillCount++)
                     {
-                        eachS.damageArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 18 + skillCount * 2);
+                        eachS.damageArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 13 + skillCount * 2);
                     }
                     for (int skillCount = 0; skillCount < eachS.moveArray.Length; skillCount++)
                     {
-                        eachS.moveArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 28 + skillCount * 2);
+                        eachS.moveArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 23 + skillCount * 2);
                     }
                     for (int skillCount = 0; skillCount < eachS.affectArray.Length; skillCount++)
                     {
-                        eachS.affectArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 38 + skillCount * 2);
+                        eachS.affectArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 33 + skillCount * 2);
                     }
                     for (int skillCount = 0; skillCount < eachS.addPowerArray.Length; skillCount++)
                     {
-                        eachS.addPowerArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 48 + skillCount * 2);
+                        eachS.addPowerArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 43 + skillCount * 2);
                     }
                     for (int skillCount = 0; skillCount < eachS.removePowerArray.Length; skillCount++)
                     {
-                        eachS.removePowerArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 58 + skillCount * 2);
+                        eachS.removePowerArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + 4 + eachSkillSize * entryCount + 2 * 53 + skillCount * 2);
                     }
                     skillDictionary.Add(entryCount, eachS);
                 }
@@ -461,15 +521,15 @@ namespace GameCore
                     for (int checkItemCount = 0; checkItemCount < eachS.itemArray.Length; checkItemCount++)
                     {
                         eachS.itemArray[checkItemCount] = new SellingItem();
-                        eachS.itemArray[checkItemCount].itemID = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 0 + checkItemCount * 2);
+                        eachS.itemArray[checkItemCount].itemID = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + skillLength + 4 + eachShopSize * entryCount + 2 * 0 + checkItemCount * 2);
                     }
                     for (int checkItemCount = 0; checkItemCount < eachS.itemArray.Length; checkItemCount++)
                     {
-                        eachS.itemArray[checkItemCount].itemCount = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 5 + checkItemCount * 2);
+                        eachS.itemArray[checkItemCount].itemCount = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + skillLength + 4 + eachShopSize * entryCount + 2 * 5 + checkItemCount * 2);
                     }
                     for (int checkItemCount = 0; checkItemCount < eachS.itemArray.Length; checkItemCount++)
                     {
-                        eachS.itemArray[checkItemCount].RequireItemAmount = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachItemSize * entryCount + 2 * 5 + checkItemCount * 2);
+                        eachS.itemArray[checkItemCount].RequireItemAmount = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + itemLength + skillLength + 4 + eachShopSize * entryCount + 2 * 10 + checkItemCount * 2);
                     }
                     shopDictionary.Add(entryCount, eachS);
                 }

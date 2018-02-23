@@ -25,33 +25,46 @@ namespace MediaCore
 
         #region declaratoin        
         Keyboard mainKB;
+        Key pressingKey = Key.Z;
+        Key releasedKey = Key.Z;
         #endregion
 
         #region business
-        public string GetInputName()
+        public bool GetKeyName(out string pmPressingKey, out string pmReleasedKey)
         {
+            pmPressingKey = "";
+            pmReleasedKey = "";
             try
             {
                 if (mainKB.Acquire().IsFailure)
-                    return "";
+                    return false;
 
                 if (mainKB.Poll().IsFailure)
-                    return "";
+                    return false;
 
                 KeyboardState state = mainKB.GetCurrentState();
                 if (Result.Last.IsFailure)
-                    return "";
+                    return false;
 
                 if (state.PressedKeys.Count == 0)
                 {
-                    return "";
+                    releasedKey = pressingKey;
+                    pressingKey = Key.Z;
+                }
+                else
+                {
+                    releasedKey = Key.Z;
+                    pressingKey = state.PressedKeys[0];
                 }
 
-                return state.PressedKeys[0].ToString();
+                pmReleasedKey = releasedKey.ToString();
+                pmPressingKey = pressingKey.ToString();
+
+                return true;
             }
             catch (Exception)
             {
-                return "";
+                return false;
             }
         }
         #endregion
