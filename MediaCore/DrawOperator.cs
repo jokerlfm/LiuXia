@@ -11,7 +11,7 @@ namespace MediaCore
 {
     public class DrawOperator
     {
-        public DrawOperator(IntPtr pmTargetHandle, int pmWidth, int pmHeight, float pmZoom)
+        public DrawOperator(IntPtr pmTargetHandle, int pmWidth, int pmHeight)
         {
             this.clientWidth = pmWidth;
             this.clientHeight = pmHeight;
@@ -26,16 +26,18 @@ namespace MediaCore
                 Windowed = true
             });
             this.unitSprite = new Sprite(mainDevice);
-            //Matrix zoomMatrix = new SlimDX.Matrix();
-            //Matrix.Scaling(pmZoom, pmZoom, 1, out zoomMatrix);            
-            //this.textureSprite.Transform = zoomMatrix;
+            Matrix zoomMatrix = new Matrix();
+            Matrix.Scaling(2, 2, 1, out zoomMatrix);
+            this.unitSprite.Transform = zoomMatrix;
 
             menuSprite = new Sprite(mainDevice);
             string fontPath = AppDomain.CurrentDomain.BaseDirectory + "resource\\font.ttc";
             PrivateFontCollection pfc = new PrivateFontCollection();
             pfc.AddFontFile(fontPath);
-            System.Drawing.Font fileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.025f);
-            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, fileFont);
+            System.Drawing.Font menuFileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.02f);
+            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, menuFileFont);
+            System.Drawing.Font detailsFileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.02f);
+            this.detailsTCFont = new SlimDX.Direct3D9.Font(mainDevice, detailsFileFont);
         }
 
         #region declaratoin
@@ -48,6 +50,7 @@ namespace MediaCore
         Color4 white;
         Color4 black;
         SlimDX.Direct3D9.Font menuTCFont;
+        SlimDX.Direct3D9.Font detailsTCFont;
         public int clientWidth = 0, clientHeight = 0;
         public IntPtr targetHandle;
         #endregion
@@ -67,10 +70,12 @@ namespace MediaCore
             string fontPath = AppDomain.CurrentDomain.BaseDirectory + "resource\\font.ttc";
             PrivateFontCollection pfc = new PrivateFontCollection();
             pfc.AddFontFile(fontPath);
-            System.Drawing.Font fileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.025f);
-            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, fileFont);
+            System.Drawing.Font menuFileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.02f);
+            this.menuTCFont = new SlimDX.Direct3D9.Font(mainDevice, menuFileFont);
+            System.Drawing.Font detailsFileFont = new System.Drawing.Font(pfc.Families[0], pmWidth * 0.02f);
+            this.detailsTCFont = new SlimDX.Direct3D9.Font(mainDevice, detailsFileFont);
         }
-        
+
         public void BeginDrawing()
         {
             mainDevice.BeginScene();
@@ -103,12 +108,20 @@ namespace MediaCore
             menuSprite.End();
         }
 
-        public void DrawText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
+        public void DrawMenuText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
         {
             int screenPosX = (int)(pmScreenPosRateX * clientWidth);
             int screenPosY = (int)(pmScreenPosRateY * clientHeight);
 
             this.menuTCFont.DrawString(menuSprite, pmText, screenPosX, screenPosY, pmColor);
+        }
+
+        public void DrawDetailsText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
+        {
+            int screenPosX = (int)(pmScreenPosRateX * clientWidth);
+            int screenPosY = (int)(pmScreenPosRateY * clientHeight);
+
+            this.detailsTCFont.DrawString(menuSprite, pmText, screenPosX, screenPosY, pmColor);
         }
 
         public void DrawBytes(byte[] pmBytes, int pmPosX, int pmPosY, int pmGapX, int pmGapY, int pmWidth, int pmHeight)
@@ -121,7 +134,7 @@ namespace MediaCore
 
         public void DrawTexture(Texture pmTexture, float pmCameraPosX, float pmCameraPosY, float pmScreenPosX, float pmScreenPosY)
         {
-            unitSprite.Draw(pmTexture, null, new SlimDX.Vector3(pmCameraPosX, pmCameraPosY, 0f), new SlimDX.Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
+            unitSprite.Draw(pmTexture, null, new Vector3(pmCameraPosX, pmCameraPosY, 0f), new Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
         }
 
         public void DrawRoundedCornerFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
@@ -139,7 +152,7 @@ namespace MediaCore
 
         }
 
-        public void DrawFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
+        public void DrawThickFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
         {
             float thickSize = clientWidth * pmThickRate;
             float startScreenPosX = clientWidth * pmPosRateX;
@@ -152,6 +165,19 @@ namespace MediaCore
             DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
             DrawPixelRectangle(startScreenPosX, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight, pmColor, pmSolid);
 
+        }
+
+        public void DrawLineFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, Color pmColor, float pmSolid)
+        {
+            float startScreenPosX = clientWidth * pmPosRateX;
+            float startScreenPosY = clientHeight * pmPosRateY;
+            float screenWidth = clientWidth * pmWidthRate;
+            float screenHeight = clientHeight * pmHeightRate;
+
+            DrawPixelRectangle(startScreenPosX, startScreenPosY, startScreenPosX + screenWidth, startScreenPosY, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY + 1, startScreenPosX, startScreenPosY + screenHeight - 1, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX + screenWidth, startScreenPosY + 1, startScreenPosX + screenWidth, startScreenPosY + screenHeight - 1, pmColor, pmSolid);
+            DrawPixelRectangle(startScreenPosX, startScreenPosY + screenHeight, startScreenPosX + screenWidth, startScreenPosY + screenHeight, pmColor, pmSolid);
         }
 
         private void DrawPixelRectangle(float pmStartScreenPosX, float pmStartScreenPosY, float pmEndScreenPosX, float pmEndScreenPosY, Color pmColor, float pmSolid)
@@ -212,7 +238,7 @@ namespace MediaCore
             mainDevice.DrawPrimitives(PrimitiveType.TriangleFan, 0, allCircleVertexes.Count);
         }
 
-        public void DrawRateRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, float pmThickRate, Color pmColor, float pmSolid)
+        public void DrawRateThickRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, float pmThickRate, Color pmColor, float pmSolid)
         {
             float thickSize = clientWidth * pmThickRate;
             float startScreenPosX = clientWidth * pmStartPosRateX;
@@ -242,9 +268,45 @@ namespace MediaCore
             mainDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, 2);
         }
 
+        public void DrawRateLineRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, Color pmColor, float pmSolid)
+        {
+            float startScreenPosX = clientWidth * pmStartPosRateX;
+            float startScreenPosY = clientHeight * pmStartPosRateY;
+            float endScreenPosX = clientWidth * pmEndPosRateX;
+            float endScreenPosY = clientHeight * pmEndPosRateY;
+
+            var vertices = new VertexBuffer(mainDevice, 8 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
+            vertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, pmSolid) },
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, pmSolid) },                
+
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, pmSolid) },
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, pmSolid) },
+
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, pmSolid) },
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, pmSolid) },
+
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, pmSolid) },
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, pmSolid) },
+            });
+            vertices.Unlock();
+
+            var vertexElems = new[] {
+                new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
+                new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
+                VertexElement.VertexDeclarationEnd
+            };
+
+            var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
+
+            mainDevice.SetStreamSource(0, vertices, 0, 20);
+            mainDevice.VertexDeclaration = vertexDecl;
+            mainDevice.DrawPrimitives(PrimitiveType.LineList, 0, 4);
+        }
+
         public Texture CreateTexture(byte[] pmBytes, int pmWidth, int pmHeight)
         {
-            return Texture.FromMemory(mainDevice, pmBytes, pmWidth, pmHeight, 1, Usage.None, Format.A8R8G8B8, Pool.Default, Filter.None, Filter.None, 0);
+            return Texture.FromMemory(mainDevice, pmBytes, pmWidth, pmHeight, 1, Usage.None, Format.A8R8G8B8, Pool.Managed, Filter.Linear, Filter.None, 0);
         }
         #endregion
     }

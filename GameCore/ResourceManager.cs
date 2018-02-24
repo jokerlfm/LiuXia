@@ -230,23 +230,23 @@ namespace GameCore
         private static void GenerateMenus()
         {
             menuDictionary = new Dictionary<MenuType, Menu>();
-            Menu noneM = new Menu(MenuType.MenuType_None, "無", null);
-            Menu mainM = new Menu(MenuType.MenuType_Main, "總", noneM);
+            Menu noneM = new Menu(MenuType.MenuType_None, "無", 0, null);
+            Menu mainM = new Menu(MenuType.MenuType_Main, "總", 0, noneM);
 
-            Menu medicalM = new Menu(MenuType.MenuType_Medical, "醫療", mainM, true);
-            Menu detoxM = new Menu(MenuType.MenuType_Detox, "解毒", mainM, true);
-            Menu itemM = new Menu(MenuType.MenuType_Item, "物品", mainM, true);
-            Menu statusM = new Menu(MenuType.MenuType_Status, "狀態", mainM, true);
-            Menu leaveM = new Menu(MenuType.MenuType_Leave, "離隊", mainM, true);
-            Menu systemM = new Menu(MenuType.MenuType_System, "系統", mainM, true);
+            Menu medicalM = new Menu(MenuType.MenuType_Medical, "醫療", 0, mainM, true);
+            Menu detoxM = new Menu(MenuType.MenuType_Detox, "解毒", 0, mainM, true);
+            Menu itemM = new Menu(MenuType.MenuType_Item, "物品", 0, mainM, true);
+            Menu statusM = new Menu(MenuType.MenuType_Status, "狀態", 0, mainM, true);
+            Menu leaveM = new Menu(MenuType.MenuType_Leave, "離隊", 0, mainM, true);
+            Menu systemM = new Menu(MenuType.MenuType_System, "系統", 0, mainM, true);
 
-            Menu saveM = new Menu(MenuType.MenuType_Save, "存檔", systemM, true);
-            Menu loadM = new Menu(MenuType.MenuType_Load, "讀檔", systemM, true);
-            Menu fullM = new Menu(MenuType.MenuType_Full, "全屏", systemM, true);
-            Menu quitM = new Menu(MenuType.MenuType_Quit, "離開", systemM, true);
+            Menu saveM = new Menu(MenuType.MenuType_Save, "存檔", 0, systemM, true);
+            Menu loadM = new Menu(MenuType.MenuType_Load, "讀檔", 0, systemM, true);
+            Menu fullM = new Menu(MenuType.MenuType_Full, "全屏", 0, systemM, true);
+            Menu quitM = new Menu(MenuType.MenuType_Quit, "離開", 0, systemM, true);
 
-            Menu quitYM = new Menu(MenuType.MenuType_Quit_Yes, "確定", systemM, true);
-            Menu quitNM = new Menu(MenuType.MenuType_Quit_No, "取消", systemM, true);
+            Menu quitYM = new Menu(MenuType.MenuType_Quit_Yes, "確定", 0, systemM, true);
+            Menu quitNM = new Menu(MenuType.MenuType_Quit_No, "取消", 0, systemM, true);
 
             noneM.subMenuList.Add(mainM);
             mainM.subMenuList.Add(medicalM);
@@ -298,7 +298,7 @@ namespace GameCore
                 gapY = BitConverter.ToInt16(pmNPBytes, basePos + 4 + 2 + 2 + 2);
                 byte[] bodyBytes = new byte[length - 12];
                 Buffer.BlockCopy(pmNPBytes, basePos + 4 + 2 + 2 + 2 + 2, bodyBytes, 0, length - 12);
-                NTexture newNT = new NTexture(bodyBytes, 0, 0, gapX, gapY);
+                NTexture newNT = new NTexture(bodyBytes, width, height, gapX, gapY);
                 result.Add(checkCount, newNT);
                 basePos += length;
                 checkCount++;

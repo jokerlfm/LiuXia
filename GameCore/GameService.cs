@@ -336,6 +336,21 @@ namespace GameCore
                                                 activeMenu.subSelectedIndex = 0;
                                                 return;
                                             }
+                                        case MenuType.MenuType_Status:
+                                            {
+                                                // update party list
+                                                activeMenu.subMenuList[activeMenu.subSelectedIndex].subMenuList.Clear();
+                                                foreach (int characterID in ResourceManager.mainPlayerData.partyMembersArray)
+                                                {
+                                                    if (characterID >= 0)
+                                                    {
+                                                        activeMenu.subMenuList[activeMenu.subSelectedIndex].subMenuList.Add(new Menu(MenuType.MenuType_Status_Each, ResourceManager.characterDictionary[characterID].characterName, characterID, activeMenu.subMenuList[activeMenu.subSelectedIndex], true));
+                                                    }
+                                                }
+                                                activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
+                                                activeMenu.subSelectedIndex = 0;
+                                                return;
+                                            }
                                         default:
                                             {
                                                 return;
@@ -349,7 +364,7 @@ namespace GameCore
                                         case MenuType.MenuType_Quit:
                                             {
                                                 activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
-                                                activeMenu.subSelectedIndex = 0;
+                                                activeMenu.subSelectedIndex = 1;
                                                 return;
                                             }
                                         default:
@@ -466,7 +481,7 @@ namespace GameCore
                             mainPlayer.playerWorldUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / 2));
+                                mainCamera.ResetCamera((int)(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / 4));
                             }
                         }
                         break;
@@ -478,7 +493,7 @@ namespace GameCore
                             mainPlayer.playerSceneUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / 2));
+                                mainCamera.ResetCamera((int)(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / 4));
                             }
                         }
                         break;
@@ -488,7 +503,7 @@ namespace GameCore
                         if (mainPlayer.playerBattleUnit.moving)
                         {
                             mainPlayer.playerBattleUnit.UpdateMoving(pmTimeElapsed);
-                            mainCamera.ResetCamera((int)(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / 2), (int)(mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / 2));
+                            mainCamera.ResetCamera((int)(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / 4));
                         }
                         break;
                     }
@@ -822,7 +837,7 @@ namespace GameCore
                     }
                 case MenuType.MenuType_Main:
                     {
-                        pen.DrawFrame(0.01f, 0.02f, 0.09f, 0.32f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        pen.DrawRateLineRectangle(0.01f, 0.02f, 0.08f, 0.32f, System.Drawing.Color.White, 1f);
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
@@ -830,8 +845,41 @@ namespace GameCore
                             {
                                 menuItemColor = System.Drawing.Color.Aquamarine;
                             }
-                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.015f, 0.03f + 0.05f * subCount, menuItemColor);
+                            pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.015f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
+                        if (pmTargetMenu.drawParents)
+                        {
+                            DrawMenu(pmTargetMenu.parentMenu);
+                        }
+                        return;
+                    }
+                case MenuType.MenuType_Status:
+                    {
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.224f, 0.02f + 0.05f * pmTargetMenu.subMenuList.Count, System.Drawing.Color.White, 1f);
+                        pen.DrawRateLineRectangle(0.234f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, 1f);
+                        for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
+                        {
+                            System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
+                            if (subCount == pmTargetMenu.subSelectedIndex)
+                            {
+                                menuItemColor = System.Drawing.Color.Aquamarine;
+                            }
+                            pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
+                        }
+                        Character targetCharacter = ResourceManager.characterDictionary[pmTargetMenu.subMenuList[pmTargetMenu.subSelectedIndex].contexID];
+                        pen.DrawMenuText(targetCharacter.characterNickName, 0.24f, 0.025f + 0.05f * 1, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.defence.ToString(), 0.24f, 0.025f + 0.05f * 2, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.detox.ToString(), 0.24f, 0.025f + 0.05f * 3, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.exp.ToString(), 0.24f, 0.025f + 0.05f * 4, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.activeLife.ToString(), 0.24f, 0.025f + 0.05f * 5, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.activePower.ToString(), 0.24f, 0.025f + 0.05f * 6, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.antiTox.ToString(), 0.24f, 0.025f + 0.05f * 7, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.armor.ToString(), 0.24f, 0.025f + 0.05f * 8, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.attack.ToString(), 0.24f, 0.025f + 0.05f * 9, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.attackWithTox.ToString(), 0.24f, 0.025f + 0.05f * 10, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.blade.ToString(), 0.24f, 0.025f + 0.05f * 11, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.fist.ToString(), 0.24f, 0.025f + 0.05f * 12, System.Drawing.Color.White);
+                        pen.DrawMenuText(targetCharacter.gender.ToString(), 0.24f, 0.025f + 0.05f * 13, System.Drawing.Color.White);
                         if (pmTargetMenu.drawParents)
                         {
                             DrawMenu(pmTargetMenu.parentMenu);
@@ -840,7 +888,7 @@ namespace GameCore
                     }
                 case MenuType.MenuType_System:
                     {
-                        pen.DrawFrame(0.11f, 0.02f, 0.09f, 0.22f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.16f, 0.22f, System.Drawing.Color.White, 1f);
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
@@ -848,7 +896,7 @@ namespace GameCore
                             {
                                 menuItemColor = System.Drawing.Color.Aquamarine;
                             }
-                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.115f, 0.03f + 0.05f * subCount, menuItemColor);
+                            pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
                         if (pmTargetMenu.drawParents)
                         {
@@ -858,7 +906,7 @@ namespace GameCore
                     }
                 case MenuType.MenuType_Quit:
                     {
-                        pen.DrawFrame(0.21f, 0.02f, 0.09f, 0.12f, 0.004f, System.Drawing.Color.DarkOrange, 1f);
+                        pen.DrawRateLineRectangle(0.17f, 0.02f, 0.24f, 0.12f, System.Drawing.Color.White, 1f);
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
@@ -866,7 +914,7 @@ namespace GameCore
                             {
                                 menuItemColor = System.Drawing.Color.Aquamarine;
                             }
-                            pen.DrawText(pmTargetMenu.subMenuList[subCount].menuName, 0.215f, 0.03f + 0.05f * subCount, menuItemColor);
+                            pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.175f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
                         if (pmTargetMenu.drawParents)
                         {
@@ -899,7 +947,7 @@ namespace GameCore
                 displayTargetForm.Height = ConfigHandler.GetConfigValue_int("windowheight");
                 displayTargetForm.Show();
 
-                pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height, ConfigHandler.GetConfigValue_float("zoom"));
+                pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height);
                 controller = new MediaCore.InputOperator(displayTargetForm);
 
                 ResizeWindow();
@@ -939,6 +987,13 @@ namespace GameCore
         #region debug
         private void DebugAdjusting()
         {
+            ResourceManager.mainPlayerData.partyMembersArray[1] = 3;
+            ResourceManager.mainPlayerData.partyMembersArray[2] = 13;
+            ResourceManager.mainPlayerData.partyMembersArray[3] = 23;
+            ResourceManager.mainPlayerData.partyMembersArray[4] = 62;
+            ResourceManager.mainPlayerData.partyMembersArray[5] = 43;
+            ResourceManager.mainPlayerData.partyMembersArray[6] = 291;
+            ResourceManager.mainPlayerData.partyMembersArray[7] = 27;
 
             // player img ids in mmap and smap are the same
             List<int> goUpTextures = new List<int>();

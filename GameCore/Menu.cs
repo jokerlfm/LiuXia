@@ -7,10 +7,11 @@ namespace GameCore
 {
     public class Menu
     {
-        public Menu(MenuType pmType, string pmMenuName, Menu pmParentMenu, bool pmDrawParents = false)
+        public Menu(MenuType pmType, string pmMenuName, int pmContexID, Menu pmParentMenu, bool pmDrawParents = false)
         {
             type = pmType;
             this.menuName = pmMenuName;
+            this.contexID = pmContexID;
             parentMenu = pmParentMenu;
             this.subMenuList = new List<Menu>();
             drawParents = pmDrawParents;
@@ -22,6 +23,7 @@ namespace GameCore
         public Menu parentMenu;
         public List<Menu> subMenuList;
         public string menuName = "";
+        public int contexID = 0;
         public bool drawParents = false;
         #endregion
 
@@ -39,6 +41,9 @@ namespace GameCore
         MenuType_Detox,
         MenuType_Item,
         MenuType_Status,
+
+        MenuType_Status_Each,
+
         MenuType_Leave,
         MenuType_System,
 
