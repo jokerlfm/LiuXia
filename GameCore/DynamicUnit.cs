@@ -222,8 +222,8 @@ namespace GameCore
             //this.screenBasePositionX = this.coordinateX * 40;
             //this.screenBasePositionY = this.coordinateY * 40;
 
-            this.screenBasePositionX = (int)(this.movingCoordinateX + (this.movingCoordinateX * ConstManager.BaseMapXSize) - (this.movingCoordinateY * ConstManager.BaseMapXSize));
-            this.screenBasePositionY = (int)(this.movingCoordinateY + (this.movingCoordinateX * ConstManager.BaseMapYSize) + (this.movingCoordinateY * ConstManager.BaseMapYSize));
+            this.screenBasePositionX = this.movingCoordinateX + (this.movingCoordinateX * ConstManager.BaseMapCoordinateSize) - (this.movingCoordinateY * ConstManager.BaseMapCoordinateSize);
+            this.screenBasePositionY = this.movingCoordinateY + (this.movingCoordinateX * ConstManager.BaseMapCoordinateSize / 2) + (this.movingCoordinateY * ConstManager.BaseMapCoordinateSize / 2);
         }
         #endregion
     }

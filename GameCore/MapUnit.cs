@@ -16,8 +16,8 @@ namespace GameCore
         public int coordinateX = 0;
         public int coordinateY = 0;
 
-        public int screenBasePositionX = 0;
-        public int screenBasePositionY = 0;
+        public float screenBasePositionX = 0;
+        public float screenBasePositionY = 0;
         #endregion
 
         #region business
@@ -29,8 +29,8 @@ namespace GameCore
             //this.screenBasePositionX = this.coordinateX * 40;
             //this.screenBasePositionY = this.coordinateY * 40;
 
-            this.screenBasePositionX = this.coordinateX + (this.coordinateX * ConstManager.BaseMapXSize) - (this.coordinateY * ConstManager.BaseMapXSize);
-            this.screenBasePositionY = this.coordinateY + (this.coordinateX * ConstManager.BaseMapYSize) + (this.coordinateY * ConstManager.BaseMapYSize);
+            this.screenBasePositionX = this.coordinateX + (this.coordinateX * ConstManager.BaseMapCoordinateSize) - (this.coordinateY * ConstManager.BaseMapCoordinateSize);
+            this.screenBasePositionY = this.coordinateY + (this.coordinateX * ConstManager.BaseMapCoordinateSize / 2) + (this.coordinateY * ConstManager.BaseMapCoordinateSize / 2);
         }
         #endregion
     }

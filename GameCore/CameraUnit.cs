@@ -27,7 +27,7 @@ namespace GameCore
 
         }
 
-        public void ResetCamera(int pmPosX, int pmPosY)
+        public void ResetCamera(float pmPosX, float pmPosY)
         {
             positionX = pmPosX;
             positionY = pmPosY;

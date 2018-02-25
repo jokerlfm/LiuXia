@@ -10,7 +10,17 @@ namespace GameCore
         public Item(int pmID)
         {
             itemID = pmID;
-            itemsIDArray = new int[5];
+            itemsIDList = new int[5];
+            itemsCountArray = new int[5];
+        }
+
+        public Item(int pmID, string pmName)
+        {
+            itemID = pmID;
+            itemName = pmName;
+            itemAlias = pmName;
+            itemDescription = pmName;
+            itemsIDList = new int[5];
             itemsCountArray = new int[5];
         }
 
@@ -68,7 +78,7 @@ namespace GameCore
         public int needEXP = 0;
         public int itemMakingNeedEXP = 0;
         public int needMaterial = 0;
-        public int[] itemsIDArray;
+        public int[] itemsIDList;
         public int[] itemsCountArray;
         #endregion
 

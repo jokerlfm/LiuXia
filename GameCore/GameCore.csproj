@@ -66,6 +66,7 @@
     <Compile Include="Shop.cs" />
     <Compile Include="Skill.cs" />
     <Compile Include="Item.cs" />
+    <Compile Include="StaticManager.cs" />
     <Compile Include="WorldBuildingUnit.cs" />
     <Compile Include="MapUnit.cs" />
     <Compile Include="Instruction.cs" />
@@ -98,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="config.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

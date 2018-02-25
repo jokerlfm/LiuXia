@@ -12,7 +12,7 @@ namespace GameCore
             characterID = pmID;
             skillsIDArray = new int[10];
             skillsLevelArray = new int[10];
-            itemsIDArray = new int[4];
+            itemsIDList = new int[4];
             itemsCountArray = new int[4];
         }
 
@@ -58,7 +58,7 @@ namespace GameCore
         public int trainingEXP = 0;
         public int[] skillsIDArray;
         public int[] skillsLevelArray;
-        public int[] itemsIDArray;
+        public int[] itemsIDList;
         public int[] itemsCountArray;
         #endregion
 

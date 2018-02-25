@@ -319,7 +319,9 @@ namespace GameCore
                 byte[] allRangerBytes = System.IO.File.ReadAllBytes(allRangerPath);
                 characterDictionary = new Dictionary<int, Character>();
                 itemDictionary = new Dictionary<int, Item>();
+                itemDictionary.Add(-1, new Item(-1, "無"));
                 skillDictionary = new Dictionary<int, Skill>();
+                skillDictionary.Add(-1, new Skill(-1, "無"));
                 shopDictionary = new Dictionary<int, Shop>();
                 int playerLength = BitConverter.ToInt32(allRangerBytes, 0);
                 int characterLength = BitConverter.ToInt32(allRangerBytes, playerLength);
@@ -356,8 +358,12 @@ namespace GameCore
                 mainPlayerData.partyMembersArray[7] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 18);
                 for (int itemCount = 0; itemCount < 1000; itemCount++)
                 {
-                    mainPlayerData.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 19 + itemCount * 4);
-                    mainPlayerData.itemsCountArray[itemCount] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 20 + itemCount * 4);
+                    int checkID = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 19 + itemCount * 4);
+                    if (checkID > 0)
+                    {
+                        mainPlayerData.itemsIDList.Add(checkID);
+                        mainPlayerData.itemsCountList.Add(BitConverter.ToInt16(allRangerBytes, 4 + 2 * 20 + itemCount * 4));
+                    }
                 }
                 for (int entryCount = 0; entryCount < totalCharacterCount; entryCount++)
                 {
@@ -402,15 +408,19 @@ namespace GameCore
                     eachC.trainingEXP = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 46);
                     for (int skillCount = 0; skillCount < eachC.skillsIDArray.Length; skillCount++)
                     {
-                        eachC.skillsIDArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachCharacterSize * entryCount + 2 * 47 + skillCount * 2);
+                        eachC.skillsIDArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 47 + skillCount * 2);
+                        if (eachC.skillsIDArray[skillCount] == 0)
+                        {
+                            eachC.skillsIDArray[skillCount] = -1;
+                        }
                     }
                     for (int skillCount = 0; skillCount < eachC.skillsIDArray.Length; skillCount++)
                     {
                         eachC.skillsLevelArray[skillCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 57 + skillCount * 2);
                     }
-                    for (int itemCount = 0; itemCount < eachC.itemsIDArray.Length; itemCount++)
+                    for (int itemCount = 0; itemCount < eachC.itemsIDList.Length; itemCount++)
                     {
-                        eachC.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 67 + itemCount * 2);
+                        eachC.itemsIDList[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + 4 + eachCharacterSize * entryCount + 2 * 67 + itemCount * 2);
                     }
                     for (int itemCount = 0; itemCount < eachC.itemsCountArray.Length; itemCount++)
                     {
@@ -471,9 +481,9 @@ namespace GameCore
                     eachI.needEXP = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
                     eachI.itemMakingNeedEXP = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
                     eachI.needMaterial = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * SelfIncreaseCount);
-                    for (int itemCount = 0; itemCount < eachI.itemsIDArray.Length; itemCount++)
+                    for (int itemCount = 0; itemCount < eachI.itemsIDList.Length; itemCount++)
                     {
-                        eachI.itemsIDArray[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 82 + itemCount * 2);
+                        eachI.itemsIDList[itemCount] = BitConverter.ToInt16(allRangerBytes, playerLength + characterLength + 4 + eachItemSize * entryCount + 2 * 82 + itemCount * 2);
                     }
                     for (int itemCount = 0; itemCount < eachI.itemsCountArray.Length; itemCount++)
                     {

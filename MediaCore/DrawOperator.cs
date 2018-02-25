@@ -11,7 +11,7 @@ namespace MediaCore
 {
     public class DrawOperator
     {
-        public DrawOperator(IntPtr pmTargetHandle, int pmWidth, int pmHeight)
+        public DrawOperator(IntPtr pmTargetHandle, int pmWidth, int pmHeight, float pmUnitTextureScaling, float pmPortraitTextureScaling, float pmItemTextureScaling)
         {
             this.clientWidth = pmWidth;
             this.clientHeight = pmHeight;
@@ -25,12 +25,19 @@ namespace MediaCore
                 BackBufferHeight = pmHeight,
                 Windowed = true
             });
-            this.unitSprite = new Sprite(mainDevice);
-            Matrix zoomMatrix = new Matrix();
-            Matrix.Scaling(2, 2, 1, out zoomMatrix);
-            this.unitSprite.Transform = zoomMatrix;
-
-            menuSprite = new Sprite(mainDevice);
+            menuTextSprite = new Sprite(mainDevice);
+            this.unitTextureSprite = new Sprite(mainDevice);
+            portraitTextureSprite = new Sprite(mainDevice);
+            itemTextureSprite = new Sprite(mainDevice);
+            Matrix unitZoomMatrix = new Matrix();
+            Matrix.Scaling(pmUnitTextureScaling, pmUnitTextureScaling, 1, out unitZoomMatrix);
+            this.unitTextureSprite.Transform = unitZoomMatrix;
+            Matrix portraitZoomMatrix = new Matrix();
+            Matrix.Scaling(pmPortraitTextureScaling, pmPortraitTextureScaling, 1, out portraitZoomMatrix);
+            portraitTextureSprite.Transform = portraitZoomMatrix;
+            Matrix itemZoomMatrix = new Matrix();
+            Matrix.Scaling(pmItemTextureScaling, pmItemTextureScaling, 1, out itemZoomMatrix);
+            itemTextureSprite.Transform = itemZoomMatrix;
             string fontPath = AppDomain.CurrentDomain.BaseDirectory + "resource\\font.ttc";
             PrivateFontCollection pfc = new PrivateFontCollection();
             pfc.AddFontFile(fontPath);
@@ -45,8 +52,10 @@ namespace MediaCore
         public SlimDX.Direct2D.WindowRenderTarget rt2D;
         public SlimDX.Direct2D.Brush brush2D;
         public Device mainDevice;
-        public Sprite unitSprite;
-        public Sprite menuSprite;
+        public Sprite unitTextureSprite;
+        public Sprite menuTextSprite;
+        public Sprite portraitTextureSprite;
+        public Sprite itemTextureSprite;
         Color4 white;
         Color4 black;
         SlimDX.Direct3D9.Font menuTCFont;
@@ -90,22 +99,43 @@ namespace MediaCore
 
         public void BeginUnitDrawing()
         {
-            unitSprite.Begin(SpriteFlags.AlphaBlend);
+            unitTextureSprite.Begin(SpriteFlags.AlphaBlend);
         }
 
         public void EndUnitDrawing()
         {
-            unitSprite.End();
+            unitTextureSprite.End();
+        }
+
+        public void BeginPortraitDrawing()
+        {
+            portraitTextureSprite.Begin(SpriteFlags.AlphaBlend);
+        }
+
+        public void BeginItemDrawing()
+        {
+            itemTextureSprite.Begin(SpriteFlags.AlphaBlend);
         }
 
         public void BeginMenuDrawing()
         {
-            menuSprite.Begin(SpriteFlags.AlphaBlend);
+            menuTextSprite.Begin(SpriteFlags.AlphaBlend);
+
         }
 
         public void EndMenuDrawing()
         {
-            menuSprite.End();
+            menuTextSprite.End();
+        }
+
+        public void EndPortraitDrawing()
+        {
+            portraitTextureSprite.End();
+        }
+
+        public void EndItemDrawing()
+        {
+            itemTextureSprite.End();
         }
 
         public void DrawMenuText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
@@ -113,7 +143,7 @@ namespace MediaCore
             int screenPosX = (int)(pmScreenPosRateX * clientWidth);
             int screenPosY = (int)(pmScreenPosRateY * clientHeight);
 
-            this.menuTCFont.DrawString(menuSprite, pmText, screenPosX, screenPosY, pmColor);
+            this.menuTCFont.DrawString(menuTextSprite, pmText, screenPosX, screenPosY, pmColor);
         }
 
         public void DrawDetailsText(string pmText, float pmScreenPosRateX, float pmScreenPosRateY, Color pmColor)
@@ -121,175 +151,65 @@ namespace MediaCore
             int screenPosX = (int)(pmScreenPosRateX * clientWidth);
             int screenPosY = (int)(pmScreenPosRateY * clientHeight);
 
-            this.detailsTCFont.DrawString(menuSprite, pmText, screenPosX, screenPosY, pmColor);
+            this.detailsTCFont.DrawString(menuTextSprite, pmText, screenPosX, screenPosY, pmColor);
         }
 
         public void DrawBytes(byte[] pmBytes, int pmPosX, int pmPosY, int pmGapX, int pmGapY, int pmWidth, int pmHeight)
         {
             Texture t = Texture.FromMemory(mainDevice, pmBytes);
             Rectangle r = new Rectangle(pmPosX + pmGapX, pmPosY + pmGapY, pmWidth, pmHeight);
-            unitSprite.Draw(t, r, white);
+            unitTextureSprite.Draw(t, r, white);
             t.Dispose();
         }
 
-        public void DrawTexture(Texture pmTexture, float pmCameraPosX, float pmCameraPosY, float pmScreenPosX, float pmScreenPosY)
+        public void DrawUnitTexture(Texture pmTexture, float pmCameraPosX, float pmCameraPosY, float pmScreenPosX, float pmScreenPosY)
         {
-            unitSprite.Draw(pmTexture, null, new Vector3(pmCameraPosX, pmCameraPosY, 0f), new Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
+            unitTextureSprite.Draw(pmTexture, null, new Vector3(pmCameraPosX, pmCameraPosY, 0f), new Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
         }
 
-        public void DrawRoundedCornerFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
+        public void DrawPortraitTexture(Texture pmTexture, float pmScreenPosX, float pmScreenPosY)
         {
-            float thickSize = clientWidth * pmThickRate;
-            float startScreenPosX = clientWidth * pmPosRateX;
-            float startScreenPosY = clientHeight * pmPosRateY;
-            float screenWidth = clientWidth * pmWidthRate;
-            float screenHeight = clientHeight * pmHeightRate;
-
-            DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY, startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX, startScreenPosY + thickSize, startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth - thickSize, startScreenPosY + screenHeight, pmColor, pmSolid);
-
+            portraitTextureSprite.Draw(pmTexture, null, new Vector3(0, 0, 0f), new Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
         }
 
-        public void DrawThickFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, float pmThickRate, Color pmColor, float pmSolid)
+        public void DrawItemTexture(Texture pmTexture, float pmScreenPosX, float pmScreenPosY)
         {
-            float thickSize = clientWidth * pmThickRate;
-            float startScreenPosX = clientWidth * pmPosRateX;
-            float startScreenPosY = clientHeight * pmPosRateY;
-            float screenWidth = clientWidth * pmWidthRate;
-            float screenHeight = clientHeight * pmHeightRate;
-
-            DrawPixelRectangle(startScreenPosX, startScreenPosY, startScreenPosX + screenWidth, startScreenPosY + thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX, startScreenPosY + thickSize, startScreenPosX + thickSize, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX + screenWidth - thickSize, startScreenPosY + thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight - thickSize, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX, startScreenPosY + screenHeight - thickSize, startScreenPosX + screenWidth, startScreenPosY + screenHeight, pmColor, pmSolid);
-
+            itemTextureSprite.Draw(pmTexture, null, new Vector3(0, 0, 0f), new Vector3(pmScreenPosX, pmScreenPosY, 0f), white);
         }
 
-        public void DrawLineFrame(float pmPosRateX, float pmPosRateY, float pmWidthRate, float pmHeightRate, Color pmColor, float pmSolid)
-        {
-            float startScreenPosX = clientWidth * pmPosRateX;
-            float startScreenPosY = clientHeight * pmPosRateY;
-            float screenWidth = clientWidth * pmWidthRate;
-            float screenHeight = clientHeight * pmHeightRate;
-
-            DrawPixelRectangle(startScreenPosX, startScreenPosY, startScreenPosX + screenWidth, startScreenPosY, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX, startScreenPosY + 1, startScreenPosX, startScreenPosY + screenHeight - 1, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX + screenWidth, startScreenPosY + 1, startScreenPosX + screenWidth, startScreenPosY + screenHeight - 1, pmColor, pmSolid);
-            DrawPixelRectangle(startScreenPosX, startScreenPosY + screenHeight, startScreenPosX + screenWidth, startScreenPosY + screenHeight, pmColor, pmSolid);
-        }
-
-        private void DrawPixelRectangle(float pmStartScreenPosX, float pmStartScreenPosY, float pmEndScreenPosX, float pmEndScreenPosY, Color pmColor, float pmSolid)
-        {
-            var vertices = new VertexBuffer(mainDevice, 4 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
-            vertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(pmStartScreenPosX, pmStartScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(pmEndScreenPosX, pmStartScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(pmStartScreenPosX, pmEndScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(pmEndScreenPosX, pmEndScreenPosY, 0f, pmSolid) }
-            });
-            vertices.Unlock();
-
-            var vertexElems = new[] {
-                new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
-                new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
-                VertexElement.VertexDeclarationEnd
-            };
-
-            var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
-
-            mainDevice.SetStreamSource(0, vertices, 0, 20);
-            mainDevice.VertexDeclaration = vertexDecl;
-            mainDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, 2);
-        }
-
-        private void DrawPixelCircle(float pmCenterScreenPosX, float pmCenterScreenPosY, float pmRadius, float pmStartAngle, float pmEndAngle, Color pmColor, float pmSolid)
-        {
-            float radius2 = pmRadius * pmRadius;
-            List<Vertex> allCircleVertexes = new List<Vertex>();
-            Vertex centerVertex = new Vertex(new Vector4(pmCenterScreenPosX, pmCenterScreenPosY, 0f, pmSolid), pmColor.ToArgb());
-            allCircleVertexes.Add(centerVertex);
-            for (float checkAngle = pmStartAngle; checkAngle <= pmEndAngle; checkAngle += 0.01f)
-            {
-                float checkRelativeX = (float)(pmRadius * Math.Cos(checkAngle));
-                float checkRelativeY = (float)(pmRadius * Math.Sin(checkAngle));
-                Vertex eachVertex = new Vertex(new Vector4(pmCenterScreenPosX + checkRelativeX, pmCenterScreenPosY + checkRelativeY, 0f, pmSolid), pmColor.ToArgb());
-                allCircleVertexes.Add(eachVertex);
-            }
-            var vertices = new VertexBuffer(mainDevice, allCircleVertexes.Count * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
-            DataStream dsVertices = vertices.Lock(0, 0, LockFlags.None);
-            foreach (Vertex eachV in allCircleVertexes)
-            {
-                dsVertices.Write(eachV.GetAllBytes(), 0, 20);
-            }
-            vertices.Unlock();
-
-            var vertexElems = new[] {
-                new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
-                new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
-                VertexElement.VertexDeclarationEnd
-            };
-
-            var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
-
-            mainDevice.SetStreamSource(0, vertices, 0, 20);
-            mainDevice.VertexDeclaration = vertexDecl;
-            mainDevice.DrawPrimitives(PrimitiveType.TriangleFan, 0, allCircleVertexes.Count);
-        }
-
-        public void DrawRateThickRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, float pmThickRate, Color pmColor, float pmSolid)
-        {
-            float thickSize = clientWidth * pmThickRate;
-            float startScreenPosX = clientWidth * pmStartPosRateX;
-            float startScreenPosY = clientHeight * pmStartPosRateY;
-            float endScreenPosX = clientWidth * pmEndPosRateX;
-            float endScreenPosY = clientHeight * pmEndPosRateY + thickSize;
-
-            var vertices = new VertexBuffer(mainDevice, 4 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
-            vertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, pmSolid) }
-            });
-            vertices.Unlock();
-
-            var vertexElems = new[] {
-                new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
-                new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
-                VertexElement.VertexDeclarationEnd
-            };
-
-            var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
-
-            mainDevice.SetStreamSource(0, vertices, 0, 20);
-            mainDevice.VertexDeclaration = vertexDecl;
-            mainDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, 2);
-        }
-
-        public void DrawRateLineRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, Color pmColor, float pmSolid)
+        public void DrawRateLine(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, Color pmColor)
         {
             float startScreenPosX = clientWidth * pmStartPosRateX;
             float startScreenPosY = clientHeight * pmStartPosRateY;
             float endScreenPosX = clientWidth * pmEndPosRateX;
             float endScreenPosY = clientHeight * pmEndPosRateY;
 
-            var vertices = new VertexBuffer(mainDevice, 8 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
+            var vertexElems = new[] {
+                new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
+                new VertexElement(0, 16, DeclarationType.Color, DeclarationMethod.Default, DeclarationUsage.Color, 0),
+                VertexElement.VertexDeclarationEnd
+            };
+
+            var vertices = new VertexBuffer(mainDevice, 2 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
             vertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, pmSolid) },                
-
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, pmSolid) },
-
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, pmSolid) },
-
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, pmSolid) },
-                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, pmSolid) },
-            });
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, 1f) },
+                new Vertex() { vertexColor = pmColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f,  1f) },
+                });
             vertices.Unlock();
+
+            var insideVertexDecl = new VertexDeclaration(mainDevice, vertexElems);
+
+            mainDevice.SetStreamSource(0, vertices, 0, 20);
+            mainDevice.VertexDeclaration = insideVertexDecl;
+            mainDevice.DrawPrimitives(PrimitiveType.LineList, 0, 1);
+        }
+
+        public void DrawRateLineRectangle(float pmStartPosRateX, float pmStartPosRateY, float pmEndPosRateX, float pmEndPosRateY, Color pmBorderColor, Color pmInnerColor)
+        {
+            float startScreenPosX = clientWidth * pmStartPosRateX;
+            float startScreenPosY = clientHeight * pmStartPosRateY;
+            float endScreenPosX = clientWidth * pmEndPosRateX;
+            float endScreenPosY = clientHeight * pmEndPosRateY;
 
             var vertexElems = new[] {
                 new VertexElement(0, 0, DeclarationType.Float4, DeclarationMethod.Default, DeclarationUsage.PositionTransformed, 0),
@@ -297,10 +217,45 @@ namespace MediaCore
                 VertexElement.VertexDeclarationEnd
             };
 
-            var vertexDecl = new VertexDeclaration(mainDevice, vertexElems);
+            if (pmInnerColor.A > 0)
+            {
+                var insideVertices = new VertexBuffer(mainDevice, 4 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
+                insideVertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
+                new Vertex() { vertexColor = pmInnerColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, 1f) },
+                new Vertex() { vertexColor = pmInnerColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f,  1f) },
 
-            mainDevice.SetStreamSource(0, vertices, 0, 20);
-            mainDevice.VertexDeclaration = vertexDecl;
+                new Vertex() { vertexColor = pmInnerColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f,  1f) },
+                new Vertex() { vertexColor = pmInnerColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f,  1f) },
+                });
+                insideVertices.Unlock();
+
+                var insideVertexDecl = new VertexDeclaration(mainDevice, vertexElems);
+
+                mainDevice.SetStreamSource(0, insideVertices, 0, 20);
+                mainDevice.VertexDeclaration = insideVertexDecl;
+                mainDevice.DrawPrimitives(PrimitiveType.TriangleStrip, 0, 2);
+            }
+
+            var borderVertices = new VertexBuffer(mainDevice, 8 * 20, Usage.WriteOnly, VertexFormat.None, Pool.Managed);
+            borderVertices.Lock(0, 0, LockFlags.None).WriteRange(new[] {
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, 1) },
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, 1) },
+
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, startScreenPosY, 0f, 1) },
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, 1) },
+
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, startScreenPosY, 0f, 1) },
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, 1) },
+
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(startScreenPosX, endScreenPosY, 0f, 1) },
+                new Vertex() { vertexColor = pmBorderColor.ToArgb(), vertexPosition = new Vector4(endScreenPosX, endScreenPosY, 0f, 1) },
+            });
+            borderVertices.Unlock();
+
+            var borderVertexDecl = new VertexDeclaration(mainDevice, vertexElems);
+
+            mainDevice.SetStreamSource(0, borderVertices, 0, 20);
+            mainDevice.VertexDeclaration = borderVertexDecl;
             mainDevice.DrawPrimitives(PrimitiveType.LineList, 0, 4);
         }
 

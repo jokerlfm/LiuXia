@@ -31,6 +31,9 @@ namespace GameCore
         public int currentSmapID = 0;
         public int currentWmapID = 0;
         public bool isFullScreen = false;
+        public float unitTextureScaling = 0;
+        public float portraitTextureScaling = 0;
+        public float itemTextureScaling = 0;
         #endregion
 
         #region business
@@ -51,6 +54,7 @@ namespace GameCore
         #region Core operatrion
 
         #endregion
+
         public void Run()
         {
             if (state == GameRunningState.GameRunningState_Stopped)
@@ -330,6 +334,15 @@ namespace GameCore
                                 {
                                     switch (activeMenu.subMenuList[activeMenu.subSelectedIndex].type)
                                     {
+                                        case MenuType.MenuType_Item:
+                                            {
+                                                activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
+                                                if (ResourceManager.mainPlayerData.itemsIDList.Count < activeMenu.subSelectedIndex - 1)
+                                                {
+                                                    activeMenu.subSelectedIndex = 0;
+                                                }
+                                                return;
+                                            }
                                         case MenuType.MenuType_System:
                                             {
                                                 activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
@@ -411,7 +424,10 @@ namespace GameCore
                         }
                         else
                         {
-                            // handle special menu items
+                            if (activeMenu.type == MenuType.MenuType_Item)
+                            {
+                                activeMenu.subSelectedIndex -= 7;
+                            }
                         }
                         return;
                     }
@@ -427,7 +443,10 @@ namespace GameCore
                         }
                         else
                         {
-                            // handle special menu items
+                            if (activeMenu.type == MenuType.MenuType_Item)
+                            {
+                                activeMenu.subSelectedIndex += 7;
+                            }
                         }
                         return;
                     }
@@ -443,7 +462,10 @@ namespace GameCore
                         }
                         else
                         {
-                            // handle special menu items
+                            if (activeMenu.type == MenuType.MenuType_Item)
+                            {
+                                activeMenu.subSelectedIndex -= 1;
+                            }
                         }
                         return;
                     }
@@ -459,7 +481,26 @@ namespace GameCore
                         }
                         else
                         {
-                            // handle special menu items
+                            if (activeMenu.type == MenuType.MenuType_Item)
+                            {
+                                activeMenu.subSelectedIndex += 1;
+                            }
+                        }
+                        return;
+                    }
+                case "PageUp":
+                    {
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex -= 35;
+                        }
+                        return;
+                    }
+                case "PageDown":
+                    {
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex += 35;
                         }
                         return;
                     }
@@ -481,7 +522,7 @@ namespace GameCore
                             mainPlayer.playerWorldUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / 4));
+                                mainCamera.ResetCamera(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
                             }
                         }
                         break;
@@ -493,7 +534,7 @@ namespace GameCore
                             mainPlayer.playerSceneUnit.UpdateMoving(pmTimeElapsed);
                             if (mainCamera.bondToPlayer)
                             {
-                                mainCamera.ResetCamera((int)(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / 4));
+                                mainCamera.ResetCamera(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
                             }
                         }
                         break;
@@ -503,7 +544,7 @@ namespace GameCore
                         if (mainPlayer.playerBattleUnit.moving)
                         {
                             mainPlayer.playerBattleUnit.UpdateMoving(pmTimeElapsed);
-                            mainCamera.ResetCamera((int)(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / 4), (int)(mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / 4));
+                            mainCamera.ResetCamera(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
                         }
                         break;
                     }
@@ -573,7 +614,7 @@ namespace GameCore
                                 ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.mmapTextureStore[ResourceManager.mainMap.earthLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -588,21 +629,10 @@ namespace GameCore
                                 ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.mmapTextureStore[ResourceManager.mainMap.surfaceLayerMatrix[xCount, yCount].textureID].textureGapY);
-                    }
-                }
-            }
-            // clear drawed
-            for (int xCount = minX; xCount <= maxX; xCount++)
-            {
-                for (int yCount = minY; yCount <= maxY; yCount++)
-                {
-                    if (ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount] != null)
-                    {
-                        ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].drawed = false;
                     }
                 }
             }
@@ -611,26 +641,19 @@ namespace GameCore
             {
                 for (int yCount = minY; yCount <= maxY; yCount++)
                 {
-                    if (ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount] != null)
+                    if (ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount] != null)
                     {
-                        if (ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY] != null)
+                        if (ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
                         {
-                            if (!ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].drawed)
-                            {
-                                if (ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureD3D9 == null)
-                                {
-                                    ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureD3D9 = pen.CreateTexture(
-                                        ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureBytes,
-                                        ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureWidth,
-                                        ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureHeight);
-                                }
-                                pen.DrawTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureD3D9,
-                                    this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                                    ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].screenBasePositionX - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureGapX,
-                                    ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].screenBasePositionY - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].textureID].textureGapY);
-                                ResourceManager.mainMap.buildingLayerMatrix[ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildX, ResourceManager.mainMap.buildXYLayerMatrix[xCount, yCount].buildY].drawed = true;
-                            }
+                            ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
+                                ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureBytes,
+                                ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
+                                ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
+                        pen.DrawUnitTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                            this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
+                            ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
+                            ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
                     }
 
                     if (xCount == (int)mainPlayer.playerWorldUnit.movingCoordinateX && yCount == (int)mainPlayer.playerWorldUnit.movingCoordinateY)
@@ -642,26 +665,11 @@ namespace GameCore
                                 ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureWidth,
                                 ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureD3D9,
                                 this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                                 mainPlayer.playerWorldUnit.screenBasePositionX - ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureGapX,
                                 mainPlayer.playerWorldUnit.screenBasePositionY - ResourceManager.mmapTextureStore[mainPlayer.playerWorldUnit.textureIDDictionary[mainPlayer.playerWorldUnit.actGroupIndex][mainPlayer.playerWorldUnit.actFrameIndex]].textureGapY);
                     }
-
-                    //if (ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount] != null)
-                    //{
-                    //    if (ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
-                    //    {
-                    //        ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
-                    //            ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureBytes,
-                    //            ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
-                    //            ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
-                    //    }
-                    //    pen.DrawTexture(ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
-                    //        this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                    //        ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
-                    //        ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.mmapTextureStore[ResourceManager.mainMap.buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
-                    //}
                 }
             }
         }
@@ -682,7 +690,7 @@ namespace GameCore
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -703,7 +711,7 @@ namespace GameCore
                                 ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureWidth,
                                 ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureD3D9,
                                 this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                                 mainPlayer.playerSceneUnit.screenBasePositionX - ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureGapX,
                                 mainPlayer.playerSceneUnit.screenBasePositionY - ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureGapY);
@@ -718,7 +726,7 @@ namespace GameCore
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -733,7 +741,7 @@ namespace GameCore
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -749,7 +757,7 @@ namespace GameCore
                                     ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureWidth,
                                     ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureHeight);
                             }
-                            pen.DrawTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9,
+                            pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9,
                                 this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                                 ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureGapX,
                                 ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureGapY);
@@ -775,7 +783,7 @@ namespace GameCore
                                 ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -796,7 +804,7 @@ namespace GameCore
                                 ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureWidth,
                                 ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureD3D9,
                                 this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                                 mainPlayer.playerBattleUnit.screenBasePositionX - ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureGapX,
                                 mainPlayer.playerBattleUnit.screenBasePositionY - ResourceManager.wmapTextureStore[mainPlayer.playerBattleUnit.textureIDDictionary[mainPlayer.playerBattleUnit.actGroupIndex][mainPlayer.playerBattleUnit.actFrameIndex]].textureGapY);
@@ -811,7 +819,7 @@ namespace GameCore
                                 ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
                                 ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawTexture(ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
                             ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
                             ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.wmapTextureStore[ResourceManager.battleMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
@@ -823,7 +831,11 @@ namespace GameCore
         private void DrawMenus()
         {
             pen.BeginMenuDrawing();
+            pen.BeginPortraitDrawing();
+            pen.BeginItemDrawing();
             DrawMenu(activeMenu);
+            pen.EndItemDrawing();
+            pen.EndPortraitDrawing();
             pen.EndMenuDrawing();
         }
 
@@ -837,13 +849,13 @@ namespace GameCore
                     }
                 case MenuType.MenuType_Main:
                     {
-                        pen.DrawRateLineRectangle(0.01f, 0.02f, 0.08f, 0.32f, System.Drawing.Color.White, 1f);
+                        pen.DrawRateLineRectangle(0.01f, 0.02f, 0.08f, 0.32f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
                             if (subCount == pmTargetMenu.subSelectedIndex)
                             {
-                                menuItemColor = System.Drawing.Color.Aquamarine;
+                                menuItemColor = System.Drawing.Color.White;
                             }
                             pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.015f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
@@ -853,33 +865,128 @@ namespace GameCore
                         }
                         return;
                     }
+                case MenuType.MenuType_Item:
+                    {
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        pen.DrawRateLine(0.1f, 0.18f, 0.98f, 0.18f, System.Drawing.Color.White);
+                        if (pmTargetMenu.subSelectedIndex < 0)
+                        {
+                            pmTargetMenu.subSelectedIndex = 0;
+                        }
+                        if (pmTargetMenu.subSelectedIndex >= ResourceManager.mainPlayerData.itemsIDList.Count)
+                        {
+                            pmTargetMenu.subSelectedIndex = ResourceManager.mainPlayerData.itemsIDList.Count - 1;
+                        }
+                        if (ResourceManager.mainPlayerData.itemsIDList.Count > pmTargetMenu.subSelectedIndex)
+                        {
+                            if (ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureD3D9 == null)
+                            {
+                                ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureD3D9 = pen.CreateTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureBytes, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureWidth, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureHeight);
+                            }
+                            pen.DrawItemTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureD3D9, (float)displayTargetForm.Width / itemTextureScaling * 0.13f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureWidth / 2 / itemTextureScaling, (float)displayTargetForm.Height / itemTextureScaling * 0.07f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureHeight / 2 / itemTextureScaling);
+                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemName, 0.22f, 0.05f, System.Drawing.Color.White);
+                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemDescription, 0.22f, 0.11f, System.Drawing.Color.White);
+
+                            int totalCountPerPage = ConstManager.itemDisplayCountPerRow * ConstManager.itemDisplayColumnCountPerPage;
+                            int startIndex = pmTargetMenu.subSelectedIndex / totalCountPerPage;
+                            startIndex = startIndex * totalCountPerPage;
+                            float gapX = 0, gapY = 0;
+                            int checkCount = startIndex;
+                            int endIndex = startIndex + totalCountPerPage;
+                            if (endIndex > ResourceManager.mainPlayerData.itemsIDList.Count)
+                            {
+                                endIndex = ResourceManager.mainPlayerData.itemsIDList.Count;
+                            }
+                            while (checkCount < endIndex)
+                            {
+                                if (ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureD3D9 == null)
+                                {
+                                    ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureD3D9 = pen.CreateTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureBytes, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureWidth, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureHeight);
+                                }
+                                pen.DrawItemTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[checkCount]].textureD3D9,
+                                (float)displayTargetForm.Width / itemTextureScaling * (0.15f + gapX) - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureWidth / 2 / itemTextureScaling, (float)displayTargetForm.Height / itemTextureScaling * (0.25f + gapY) - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureHeight / 2 / itemTextureScaling);
+
+                                if (checkCount == pmTargetMenu.subSelectedIndex)
+                                {
+                                    pen.DrawRateLineRectangle(0.12f + gapX, 0.21f + gapY, 0.12f + gapX + 0.11f, 0.21f + gapY + 0.145f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(0, System.Drawing.Color.White));
+                                }
+
+                                gapX += 0.12f;
+                                checkCount++;
+                                if (checkCount % ConstManager.itemDisplayCountPerRow == 0)
+                                {
+                                    gapX = 0;
+                                    gapY += 0.15f;
+                                }
+                            }
+                        }
+
+                        if (pmTargetMenu.drawParents)
+                        {
+                            DrawMenu(pmTargetMenu.parentMenu);
+                        }
+                        return;
+                    }
                 case MenuType.MenuType_Status:
                     {
-                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.224f, 0.02f + 0.05f * pmTargetMenu.subMenuList.Count, System.Drawing.Color.White, 1f);
-                        pen.DrawRateLineRectangle(0.234f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, 1f);
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.224f, 0.02f + 0.05f * pmTargetMenu.subMenuList.Count, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        pen.DrawRateLineRectangle(0.234f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
                             if (subCount == pmTargetMenu.subSelectedIndex)
                             {
-                                menuItemColor = System.Drawing.Color.Aquamarine;
+                                menuItemColor = System.Drawing.Color.White;
                             }
                             pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
                         Character targetCharacter = ResourceManager.characterDictionary[pmTargetMenu.subMenuList[pmTargetMenu.subSelectedIndex].contexID];
-                        pen.DrawMenuText(targetCharacter.characterNickName, 0.24f, 0.025f + 0.05f * 1, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.defence.ToString(), 0.24f, 0.025f + 0.05f * 2, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.detox.ToString(), 0.24f, 0.025f + 0.05f * 3, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.exp.ToString(), 0.24f, 0.025f + 0.05f * 4, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.activeLife.ToString(), 0.24f, 0.025f + 0.05f * 5, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.activePower.ToString(), 0.24f, 0.025f + 0.05f * 6, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.antiTox.ToString(), 0.24f, 0.025f + 0.05f * 7, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.armor.ToString(), 0.24f, 0.025f + 0.05f * 8, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.attack.ToString(), 0.24f, 0.025f + 0.05f * 9, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.attackWithTox.ToString(), 0.24f, 0.025f + 0.05f * 10, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.blade.ToString(), 0.24f, 0.025f + 0.05f * 11, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.fist.ToString(), 0.24f, 0.025f + 0.05f * 12, System.Drawing.Color.White);
-                        pen.DrawMenuText(targetCharacter.gender.ToString(), 0.24f, 0.025f + 0.05f * 13, System.Drawing.Color.White);
+                        if (ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 == null)
+                        {
+                            ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 = pen.CreateTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureBytes, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight);
+                        }
+                        pen.DrawPortraitTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9,
+                            (float)displayTargetForm.Width / portraitTextureScaling * 0.35f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth / 2 / portraitTextureScaling, (float)displayTargetForm.Height / portraitTextureScaling * 0.15f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight / 2 / portraitTextureScaling);
+
+                        pen.DrawMenuText("等級", 0.25f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.level.ToString(), 0.35f, 0.3f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("經驗", 0.25f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.exp.ToString(), 0.35f, 0.35f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("生命", 0.25f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activeLife.ToString() + "/" + targetCharacter.maxLife.ToString(), 0.35f, 0.45f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("内力", 0.25f, 0.5f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activePower.ToString() + "/" + targetCharacter.maxPower.ToString(), 0.35f, 0.5f, targetCharacter.powerType == 2 ? System.Drawing.Color.White : (targetCharacter.powerType == 0 ? System.Drawing.Color.Yellow : System.Drawing.Color.Purple));
+                        pen.DrawMenuText("體力", 0.25f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.physic.ToString(), 0.35f, 0.55f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("中毒", 0.25f, 0.65f, System.Drawing.Color.Green); pen.DrawMenuText(targetCharacter.poisoned.ToString(), 0.35f, 0.65f, System.Drawing.Color.Green);
+                        pen.DrawMenuText("内傷", 0.25f, 0.7f, System.Drawing.Color.Red); pen.DrawMenuText(targetCharacter.injury.ToString(), 0.35f, 0.7f, System.Drawing.Color.Red);
+                        pen.DrawMenuText("武器", 0.25f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.weapon].itemName, 0.35f, 0.8f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("防具", 0.25f, 0.85f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.armor].itemName, 0.35f, 0.85f, System.Drawing.Color.Yellow);
+
+                        pen.DrawMenuText("攻擊", 0.5f, 0.1f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.attack.ToString(), 0.6f, 0.1f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("防禦", 0.5f, 0.15f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.defence.ToString(), 0.6f, 0.15f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("輕功", 0.5f, 0.2f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.move.ToString(), 0.6f, 0.2f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("拳脚", 0.5f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.fist.ToString(), 0.6f, 0.3f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("御劍", 0.5f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.sword.ToString(), 0.6f, 0.35f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("耍刀", 0.5f, 0.4f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.blade.ToString(), 0.6f, 0.4f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("奇門", 0.5f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.special.ToString(), 0.6f, 0.45f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("暗器", 0.5f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.hidden.ToString(), 0.6f, 0.55f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("用毒", 0.5f, 0.6f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.tox.ToString(), 0.6f, 0.6f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("醫療", 0.5f, 0.7f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.medical.ToString(), 0.6f, 0.7f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("解毒", 0.5f, 0.75f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.detox.ToString(), 0.6f, 0.75f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("抗毒", 0.5f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.antiTox.ToString(), 0.6f, 0.8f, System.Drawing.Color.Yellow);
+
+                        pen.DrawMenuText("所學武功", 0.75f, 0.1f, System.Drawing.Color.Orange);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[0]].skillName, 0.7f, 0.15f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[0] / 100 + 1).ToString(), 0.9f, 0.15f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[1]].skillName, 0.7f, 0.2f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[1] / 100 + 1).ToString(), 0.9f, 0.2f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[2]].skillName, 0.7f, 0.25f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[2] / 100 + 1).ToString(), 0.9f, 0.25f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[3]].skillName, 0.7f, 0.3f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[3] / 100 + 1).ToString(), 0.9f, 0.3f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[4]].skillName, 0.7f, 0.35f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[4] / 100 + 1).ToString(), 0.9f, 0.35f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[5]].skillName, 0.7f, 0.4f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[5] / 100 + 1).ToString(), 0.9f, 0.4f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[6]].skillName, 0.7f, 0.45f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[6] / 100 + 1).ToString(), 0.9f, 0.45f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[7]].skillName, 0.7f, 0.5f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[7] / 100 + 1).ToString(), 0.9f, 0.5f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[8]].skillName, 0.7f, 0.55f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[8] / 100 + 1).ToString(), 0.9f, 0.55f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[9]].skillName, 0.7f, 0.6f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[9] / 100 + 1).ToString(), 0.9f, 0.6f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("修煉物品", 0.75f, 0.7f, System.Drawing.Color.Orange);
+                        pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.trainingItem].itemName, 0.75f, 0.75f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText("修煉經驗", 0.75f, 0.8f, System.Drawing.Color.Orange);
+                        pen.DrawMenuText(targetCharacter.trainingEXP.ToString(), 0.75f, 0.85f, System.Drawing.Color.Yellow);
+
                         if (pmTargetMenu.drawParents)
                         {
                             DrawMenu(pmTargetMenu.parentMenu);
@@ -888,13 +995,13 @@ namespace GameCore
                     }
                 case MenuType.MenuType_System:
                     {
-                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.16f, 0.22f, System.Drawing.Color.White, 1f);
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.16f, 0.22f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
                             if (subCount == pmTargetMenu.subSelectedIndex)
                             {
-                                menuItemColor = System.Drawing.Color.Aquamarine;
+                                menuItemColor = System.Drawing.Color.White;
                             }
                             pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
@@ -906,13 +1013,13 @@ namespace GameCore
                     }
                 case MenuType.MenuType_Quit:
                     {
-                        pen.DrawRateLineRectangle(0.17f, 0.02f, 0.24f, 0.12f, System.Drawing.Color.White, 1f);
+                        pen.DrawRateLineRectangle(0.17f, 0.02f, 0.24f, 0.12f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
                         for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
                             if (subCount == pmTargetMenu.subSelectedIndex)
                             {
-                                menuItemColor = System.Drawing.Color.Aquamarine;
+                                menuItemColor = System.Drawing.Color.White;
                             }
                             pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.175f, 0.025f + 0.05f * subCount, menuItemColor);
                         }
@@ -936,7 +1043,6 @@ namespace GameCore
             try
             {
                 ConfigHandler.LoadConfig();
-                ResourceManager.LoadResource();
 
                 if (displayTargetForm == null)
                 {
@@ -947,7 +1053,13 @@ namespace GameCore
                 displayTargetForm.Height = ConfigHandler.GetConfigValue_int("windowheight");
                 displayTargetForm.Show();
 
-                pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height);
+                ResourceManager.LoadResource();
+
+                this.unitTextureScaling = (float)displayTargetForm.Width / (float)ConstManager.baseScreenSizeX;
+                this.portraitTextureScaling = (float)ConstManager.basePortraitSize / (float)ResourceManager.portraitTextureStore[0].textureWidth;
+                this.itemTextureScaling = (float)ConstManager.baseItemSize / (float)ResourceManager.mmapTextureStore[3501].textureWidth;
+
+                pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height, unitTextureScaling, portraitTextureScaling, itemTextureScaling);
                 controller = new MediaCore.InputOperator(displayTargetForm);
 
                 ResizeWindow();
@@ -994,6 +1106,12 @@ namespace GameCore
             ResourceManager.mainPlayerData.partyMembersArray[5] = 43;
             ResourceManager.mainPlayerData.partyMembersArray[6] = 291;
             ResourceManager.mainPlayerData.partyMembersArray[7] = 27;
+            Random rdTest = new Random();
+            for (int checkID = 0; checkID < 200; checkID++)
+            {
+                ResourceManager.mainPlayerData.itemsIDList.Add(checkID);
+                ResourceManager.mainPlayerData.itemsCountList.Add(rdTest.Next(1, 1000));
+            }
 
             // player img ids in mmap and smap are the same
             List<int> goUpTextures = new List<int>();
@@ -1070,8 +1188,8 @@ namespace GameCore
             this.mainCamera.BindToPlayer();
 
             this.mainPlayer.EnterWorld();
-            //this.player.EnterScene(0, 0);
-            //this.player.playerSceneUnit.SetFixedCoordinate(25, 39);            
+            //this.mainPlayer.EnterScene(0, 0);
+            //this.mainPlayer.playerSceneUnit.SetFixedCoordinate(25, 39);
             //this.mainPlayer.EnterBattle(0);
             //this.mainPlayer.playerBattleUnit.SetFixedCoordinate(25, 39);
 

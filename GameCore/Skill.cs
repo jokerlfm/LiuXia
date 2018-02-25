@@ -17,6 +17,17 @@ namespace GameCore
             removePowerArray = new int[10];
         }
 
+        public Skill(int pmID, string pmName)
+        {
+            skillID = pmID;
+            skillName = pmName;
+            damageArray = new int[10];
+            moveArray = new int[10];
+            affectArray = new int[10];
+            addPowerArray = new int[10];
+            removePowerArray = new int[10];
+        }
+
         #region declaration
         public int skillID = 0;
         public string skillName = "";

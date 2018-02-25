@@ -13,14 +13,14 @@ namespace GameCore
         }
 
         #region declaration
-        public int positionX = 0;
-        public int positionY = 0;
+        public float positionX = 0;
+        public float positionY = 0;
 
-        public int movingPositionX = 0;
-        public int movingPositionY = 0;
+        public float movingPositionX = 0;
+        public float movingPositionY = 0;
 
-        public int targetPostionX = 0;
-        public int targetPostionY = 0;
+        public float targetPostionX = 0;
+        public float targetPostionY = 0;
         public int moveSpeed = 0;
 
         public bool moving = false;
@@ -95,7 +95,7 @@ namespace GameCore
             }
         }
 
-        public int GetValidPositionX()
+        public float GetValidPositionX()
         {
             if (moving)
             {
@@ -107,7 +107,7 @@ namespace GameCore
             }
         }
 
-        public int GetValidPositionY()
+        public float GetValidPositionY()
         {
             if (moving)
             {
