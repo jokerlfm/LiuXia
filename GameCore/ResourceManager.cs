@@ -27,6 +27,7 @@ namespace GameCore
 
         public static PlayerData mainPlayerData;
         public static Dictionary<MenuType, Menu> menuDictionary;
+        public static Dictionary<int, Event> constEventDictionary;
 
         private static int selfIncreaseCount = 0;
         private static int SelfIncreaseCount
@@ -48,8 +49,10 @@ namespace GameCore
         {
             musicStore = new Dictionary<int, byte[]>();
 
-            GenerateNP();
+            LoadNP();
             GenerateMenus();
+            GenerateConstEvents();
+            LoadDynamicEvents();
 
             GameService game = GameService.GetGame();
             game.mainCamera = new CameraUnit();
@@ -57,7 +60,51 @@ namespace GameCore
             game.activeMenu = menuDictionary[MenuType.MenuType_None];
         }
 
-        private static void GenerateNP()
+        private static void LoadDynamicEvents()
+        {
+
+        }
+
+        private static void GenerateConstEvents()
+        {
+            constEventDictionary = new Dictionary<int, Event>();
+            Instruction gettingDarkInstruction = new Instruction(0);
+            gettingDarkInstruction.type = InstructionType.InstructionType_ScreenGettingDark;
+            gettingDarkInstruction.instructionParametersArray[0] = 0;
+            Event gettingDarkEvent = new Event(0);
+            gettingDarkEvent.type = EventType.EventType_ConstEvent;
+            gettingDarkEvent.instructionDictionary.Add(gettingDarkInstruction.instructionID, gettingDarkInstruction);
+            constEventDictionary.Add(gettingDarkEvent.eventID, gettingDarkEvent);
+
+            Instruction gettingBrightInstruction = new Instruction(0);
+            gettingBrightInstruction.type = InstructionType.InstructionType_ScreenGettingBright;
+            gettingBrightInstruction.instructionParametersArray[0] = 0;
+            Event gettingBrightEvent = new Event(1);
+            gettingBrightEvent.type = EventType.EventType_ConstEvent;            
+            gettingBrightEvent.instructionDictionary.Add(gettingBrightInstruction.instructionID, gettingBrightInstruction);
+            constEventDictionary.Add(gettingBrightEvent.eventID, gettingBrightEvent);
+        }
+
+        private static void DataAdjustion()
+        {
+            foreach (Character eachC in characterDictionary.Values)
+            {
+                int checkWeapon = eachC.weapon;
+                int checkArmor = eachC.armor;
+                eachC.weapon = -1;
+                eachC.armor = -1;
+                if (checkWeapon >= 0)
+                {
+                    eachC.EquipItem(checkWeapon);
+                }
+                if (checkArmor >= 0)
+                {
+                    eachC.EquipItem(checkArmor);
+                }
+            }
+        }
+
+        private static void LoadNP()
         {
             string titlePath = AppDomain.CurrentDomain.BaseDirectory + "resource\\title.np";
             if (System.IO.File.Exists(titlePath))
@@ -230,23 +277,23 @@ namespace GameCore
         private static void GenerateMenus()
         {
             menuDictionary = new Dictionary<MenuType, Menu>();
-            Menu noneM = new Menu(MenuType.MenuType_None, "無", 0, null);
-            Menu mainM = new Menu(MenuType.MenuType_Main, "總", 0, noneM);
+            Menu noneM = new Menu(MenuType.MenuType_None, "無", null);
+            Menu mainM = new Menu(MenuType.MenuType_Main, "總", noneM);
 
-            Menu medicalM = new Menu(MenuType.MenuType_Medical, "醫療", 0, mainM, true);
-            Menu detoxM = new Menu(MenuType.MenuType_Detox, "解毒", 0, mainM, true);
-            Menu itemM = new Menu(MenuType.MenuType_Item, "物品", 0, mainM, true);
-            Menu statusM = new Menu(MenuType.MenuType_Status, "狀態", 0, mainM, true);
-            Menu leaveM = new Menu(MenuType.MenuType_Leave, "離隊", 0, mainM, true);
-            Menu systemM = new Menu(MenuType.MenuType_System, "系統", 0, mainM, true);
+            Menu medicalM = new Menu(MenuType.MenuType_Medical, "醫療", mainM, true);
+            Menu detoxM = new Menu(MenuType.MenuType_Detox, "解毒", mainM, true);
+            Menu itemM = new Menu(MenuType.MenuType_Item, "物品", mainM, true);
+            Menu statusM = new Menu(MenuType.MenuType_Status, "狀態", mainM, true);
+            Menu leaveM = new Menu(MenuType.MenuType_Leave, "離隊", mainM, true);
+            Menu systemM = new Menu(MenuType.MenuType_System, "系統", mainM, true);
 
-            Menu saveM = new Menu(MenuType.MenuType_Save, "存檔", 0, systemM, true);
-            Menu loadM = new Menu(MenuType.MenuType_Load, "讀檔", 0, systemM, true);
-            Menu fullM = new Menu(MenuType.MenuType_Full, "全屏", 0, systemM, true);
-            Menu quitM = new Menu(MenuType.MenuType_Quit, "離開", 0, systemM, true);
+            Menu saveM = new Menu(MenuType.MenuType_Save, "存檔", systemM, true);
+            Menu loadM = new Menu(MenuType.MenuType_Load, "讀檔", systemM, true);
+            Menu fullM = new Menu(MenuType.MenuType_Full, "全屏", systemM, true);
+            Menu quitM = new Menu(MenuType.MenuType_Quit, "離開", systemM, true);
 
-            Menu quitYM = new Menu(MenuType.MenuType_Quit_Yes, "確定", 0, systemM, true);
-            Menu quitNM = new Menu(MenuType.MenuType_Quit_No, "取消", 0, systemM, true);
+            Menu quitYM = new Menu(MenuType.MenuType_Quit_Yes, "確定", systemM, true);
+            Menu quitNM = new Menu(MenuType.MenuType_Quit_No, "取消", systemM, true);
 
             noneM.subMenuList.Add(mainM);
             mainM.subMenuList.Add(medicalM);
@@ -348,14 +395,16 @@ namespace GameCore
                 mainPlayerData.boatCoordinateX2 = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 8);
                 mainPlayerData.boatCoordinateY2 = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 9);
                 mainPlayerData.boatFaceDirection = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 10);
-                mainPlayerData.partyMembersArray[0] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 11);
-                mainPlayerData.partyMembersArray[1] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 12);
-                mainPlayerData.partyMembersArray[2] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 13);
-                mainPlayerData.partyMembersArray[3] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 14);
-                mainPlayerData.partyMembersArray[4] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 15);
-                mainPlayerData.partyMembersArray[5] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 16);
-                mainPlayerData.partyMembersArray[6] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 17);
-                mainPlayerData.partyMembersArray[7] = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 18);
+                int checkPartyMemberCount = 0;
+                while (checkPartyMemberCount < 8)
+                {
+                    int partyMemberID = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 11 + 2 * checkPartyMemberCount);
+                    if (partyMemberID >= 0)
+                    {
+                        mainPlayerData.partyMembersIDList.Add(partyMemberID);
+                    }
+                    checkPartyMemberCount++;
+                }
                 for (int itemCount = 0; itemCount < 1000; itemCount++)
                 {
                     int checkID = BitConverter.ToInt16(allRangerBytes, 4 + 2 * 19 + itemCount * 4);
@@ -575,15 +624,15 @@ namespace GameCore
                     int mmapCoordinateY2 = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 8);
                     if (mmapCoordinateX1 > 0 || mmapCoordinateY1 > 0)
                     {
-                        mainMap.destMatrix[mmapCoordinateX1, mmapCoordinateY1] = new Entrance();
-                        mainMap.destMatrix[mmapCoordinateX1, mmapCoordinateY1].destMapType = MapType.Scene;
-                        mainMap.destMatrix[mmapCoordinateX1, mmapCoordinateY1].sceneID = checkCount;
+                        mainMap.entranceMatrix[mmapCoordinateX1, mmapCoordinateY1] = new Entrance();
+                        mainMap.entranceMatrix[mmapCoordinateX1, mmapCoordinateY1].destMapType = MapType.Scene;
+                        mainMap.entranceMatrix[mmapCoordinateX1, mmapCoordinateY1].sceneID = checkCount;
                     }
                     if (mmapCoordinateX2 > 0 || mmapCoordinateY2 > 0)
                     {
-                        mainMap.destMatrix[mmapCoordinateX2, mmapCoordinateY2] = new Entrance();
-                        mainMap.destMatrix[mmapCoordinateX2, mmapCoordinateY2].destMapType = MapType.Scene;
-                        mainMap.destMatrix[mmapCoordinateX2, mmapCoordinateY2].sceneID = checkCount;
+                        mainMap.entranceMatrix[mmapCoordinateX2, mmapCoordinateY2] = new Entrance();
+                        mainMap.entranceMatrix[mmapCoordinateX2, mmapCoordinateY2].destMapType = MapType.Scene;
+                        mainMap.entranceMatrix[mmapCoordinateX2, mmapCoordinateY2].sceneID = checkCount;
                     }
                     eachSM.playerEnterCoordinateX = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 9);
                     eachSM.playerEnterCoordinateY = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 10);
@@ -595,21 +644,21 @@ namespace GameCore
                     int exitCoordinateY3 = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 16);
                     if (exitCoordinateX1 > 0 || exitCoordinateY1 > 0)
                     {
-                        eachSM.destMatrix[exitCoordinateX1, exitCoordinateY1] = new Entrance();
-                        eachSM.destMatrix[exitCoordinateX1, exitCoordinateY1].destMapType = MapType.World;
-                        eachSM.destMatrix[exitCoordinateX1, exitCoordinateY1].sceneID = -1;
+                        eachSM.entranceMatrix[exitCoordinateX1, exitCoordinateY1] = new Entrance();
+                        eachSM.entranceMatrix[exitCoordinateX1, exitCoordinateY1].destMapType = MapType.World;
+                        eachSM.entranceMatrix[exitCoordinateX1, exitCoordinateY1].sceneID = -1;
                     }
                     if (exitCoordinateX2 > 0 || exitCoordinateY2 > 0)
                     {
-                        eachSM.destMatrix[exitCoordinateX2, exitCoordinateY2] = new Entrance();
-                        eachSM.destMatrix[exitCoordinateX2, exitCoordinateY2].destMapType = MapType.World;
-                        eachSM.destMatrix[exitCoordinateX2, exitCoordinateY2].sceneID = -1;
+                        eachSM.entranceMatrix[exitCoordinateX2, exitCoordinateY2] = new Entrance();
+                        eachSM.entranceMatrix[exitCoordinateX2, exitCoordinateY2].destMapType = MapType.World;
+                        eachSM.entranceMatrix[exitCoordinateX2, exitCoordinateY2].sceneID = -1;
                     }
                     if (exitCoordinateX3 > 0 || exitCoordinateY3 > 0)
                     {
-                        eachSM.destMatrix[exitCoordinateX3, exitCoordinateY3] = new Entrance();
-                        eachSM.destMatrix[exitCoordinateX3, exitCoordinateY3].destMapType = MapType.World;
-                        eachSM.destMatrix[exitCoordinateX3, exitCoordinateY3].sceneID = -1;
+                        eachSM.entranceMatrix[exitCoordinateX3, exitCoordinateY3] = new Entrance();
+                        eachSM.entranceMatrix[exitCoordinateX3, exitCoordinateY3].destMapType = MapType.World;
+                        eachSM.entranceMatrix[exitCoordinateX3, exitCoordinateY3].sceneID = -1;
                     }
                     int enterSubSceneCoordinateX1 = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 17);
                     int enterSubSceneCoordinateY1 = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 18);
@@ -617,15 +666,15 @@ namespace GameCore
                     int enterSubSceneCoordinateY2 = BitConverter.ToInt16(allSceneBytes, entranceStartPos + checkCount * entranceSize + 2 * 20);
                     if (enterSubSceneCoordinateX1 > 0 || enterSubSceneCoordinateY1 > 0)
                     {
-                        eachSM.destMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1] = new Entrance();
-                        eachSM.destMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1].destMapType = MapType.Scene;
-                        eachSM.destMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1].sceneID = subSceneID;
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1] = new Entrance();
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1].destMapType = MapType.Scene;
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX1, enterSubSceneCoordinateY1].sceneID = subSceneID;
                     }
                     if (enterSubSceneCoordinateX2 > 0 || enterSubSceneCoordinateY2 > 0)
                     {
-                        eachSM.destMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2] = new Entrance();
-                        eachSM.destMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2].destMapType = MapType.Scene;
-                        eachSM.destMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2].sceneID = subSceneID;
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2] = new Entrance();
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2].destMapType = MapType.Scene;
+                        eachSM.entranceMatrix[enterSubSceneCoordinateX2, enterSubSceneCoordinateY2].sceneID = subSceneID;
                     }
                     for (int yCount = 0; yCount < 64; yCount++)
                     {
@@ -692,6 +741,8 @@ namespace GameCore
                     sceneMapDictionary.Add(checkCount, eachSM);
                     checkCount++;
                 }
+
+                DataAdjustion();
             }
             catch (Exception)
             {

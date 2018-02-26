@@ -209,7 +209,7 @@ namespace GameCore
             if (xReady && yReady)
             {
                 SetMovingCoordinate(targetCoordinateX, targetCoordinateY);
-                SetFixedCoordinate(targetCoordinateX, targetCoordinateY);
+                SetFixedCoordinate(targetCoordinateX, targetCoordinateY);                
                 moving = false;
             }
         }

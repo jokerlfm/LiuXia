@@ -11,6 +11,7 @@ namespace GameCore
         private GameService(string pmGameName, System.Windows.Forms.Form pmTargetForm = null)
         {
             this.gameName = pmGameName;
+            currentConstEventInstruction = null;
             displayTargetForm = pmTargetForm;
         }
 
@@ -30,6 +31,7 @@ namespace GameCore
         public Menu activeMenu;
         public int currentSmapID = 0;
         public int currentWmapID = 0;
+        public Instruction currentConstEventInstruction;
         public bool isFullScreen = false;
         public float unitTextureScaling = 0;
         public float portraitTextureScaling = 0;
@@ -52,7 +54,83 @@ namespace GameCore
         }
 
         #region Core operatrion
+        public void EnterWorld()
+        {
+            ExecuteConstEvent(0);
+            runtimeState = RuntimeState.RuntimeState_World;
+            ExecuteConstEvent(1);
+        }
 
+        public void EnterScene(int pmSmapID)
+        {
+            currentSmapID = pmSmapID;
+            mainPlayer.playerSceneUnit.SetFixedCoordinate(ResourceManager.sceneMapDictionary[currentSmapID].playerEnterCoordinateX, ResourceManager.sceneMapDictionary[currentSmapID].playerEnterCoordinateY);
+            ExecuteConstEvent(0);
+            runtimeState = RuntimeState.RuntimeState_Scene;
+            ExecuteConstEvent(1);
+        }
+
+        public void EnterBattle(int pmWmapID)
+        {
+
+        }
+
+        public void ExecuteConstEvent(int pmEventID)
+        {
+            Event targetEvent = ResourceManager.constEventDictionary[pmEventID];
+            int checkIKey = 0;
+            while (checkIKey <= targetEvent.instructionDictionary.Keys.Max())
+            {
+                currentConstEventInstruction = targetEvent.instructionDictionary[checkIKey];
+                switch (currentConstEventInstruction.type)
+                {
+                    case InstructionType.InstructionType_ScreenGettingDark:
+                        {
+                            currentConstEventInstruction.instructionParametersArray[0] = 0;
+                            int checkTime = 0;
+                            while (checkTime < 500)
+                            {
+                                if (currentConstEventInstruction.instructionParametersArray[0] <= 205)
+                                {
+                                    currentConstEventInstruction.instructionParametersArray[0] += 50;
+                                }
+                                else
+                                {
+                                    currentConstEventInstruction.instructionParametersArray[0] = 255;
+                                }
+                                Thread.Sleep(50);
+                                checkTime += 50;
+                            }
+                            break;
+                        }
+                    case InstructionType.InstructionType_ScreenGettingBright:
+                        {
+                            currentConstEventInstruction.instructionParametersArray[0] = 255;
+                            int checkTime = 0;
+                            while (checkTime < 500)
+                            {
+                                if (currentConstEventInstruction.instructionParametersArray[0] >= 50)
+                                {
+                                    currentConstEventInstruction.instructionParametersArray[0] -= 50;
+                                }
+                                else
+                                {
+                                    currentConstEventInstruction.instructionParametersArray[0] = 0;
+                                }
+                                Thread.Sleep(50);
+                                checkTime += 50;
+                            }
+                            break;
+                        }
+                    default:
+                        {
+                            break;
+                        }
+                }
+                checkIKey++;
+            }
+            currentConstEventInstruction = null;
+        }
         #endregion
 
         public void Run()
@@ -91,6 +169,9 @@ namespace GameCore
             // Debug
             this.DebugAdjusting();
 
+            WaitCallback wcbGameDrawing = new WaitCallback(this.GameDrawing);
+            ThreadPool.QueueUserWorkItem(wcbGameDrawing, null);
+
             DateTime dtPrevUpdateTime = DateTime.Now;
             while (state == GameRunningState.GameRunningState_Running)
             {
@@ -101,16 +182,27 @@ namespace GameCore
                 this.UpdatePlayer(timeElapsed);
                 this.UpdateCamera(timeElapsed);
 
-                pen.BeginDrawing();
-                DrawUnits();
-                DrawMenus();
-                pen.EndDrawing();
-
                 dtPrevUpdateTime = DateTime.Now;
                 Thread.Sleep(10);
             }
 
             state = GameRunningState.GameRunningState_Finished;
+        }
+
+        private void GameDrawing(object pmMain = null)
+        {
+            while (state == GameRunningState.GameRunningState_Running)
+            {
+                pen.BeginDrawing();
+                DrawUnits();
+                DrawMenus();
+                DrawConstEventInstruction();
+
+                DrawDebug();
+                pen.EndDrawing();
+
+                Thread.Sleep(10);
+            }
         }
 
         private void HandleInput()
@@ -163,6 +255,12 @@ namespace GameCore
                                 else
                                 {
                                     mainPlayer.playerWorldUnit.FaceUp();
+                                    int sceneID = ResourceManager.mainMap.Enterable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY - 1);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceUp();
+                                        EnterScene(sceneID);
+                                    }
                                 }
                             }
                             return;
@@ -178,6 +276,12 @@ namespace GameCore
                                 else
                                 {
                                     mainPlayer.playerWorldUnit.FaceDown();
+                                    int sceneID = ResourceManager.mainMap.Enterable(mainPlayer.playerWorldUnit.coordinateX, mainPlayer.playerWorldUnit.coordinateY + 1);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceDown();
+                                        EnterScene(sceneID);
+                                    }
                                 }
                             }
                             return;
@@ -193,6 +297,12 @@ namespace GameCore
                                 else
                                 {
                                     mainPlayer.playerWorldUnit.FaceLeft();
+                                    int sceneID = ResourceManager.mainMap.Enterable(mainPlayer.playerWorldUnit.coordinateX - 1, mainPlayer.playerWorldUnit.coordinateY);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceLeft();
+                                        EnterScene(sceneID);
+                                    }
                                 }
                             }
                             return;
@@ -208,6 +318,12 @@ namespace GameCore
                                 else
                                 {
                                     mainPlayer.playerWorldUnit.FaceRight();
+                                    int sceneID = ResourceManager.mainMap.Enterable(mainPlayer.playerWorldUnit.coordinateX + 1, mainPlayer.playerWorldUnit.coordinateY);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceRight();
+                                        EnterScene(sceneID);
+                                    }
                                 }
                             }
                             return;
@@ -239,7 +355,22 @@ namespace GameCore
                             {
                                 if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1))
                                 {
-                                    mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    int sceneID = ResourceManager.sceneMapDictionary[currentSmapID].Enterable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY - 1);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceUp();
+                                        EnterScene(sceneID);
+                                    }
+                                    else if (sceneID == -1)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceUp();
+                                        mainPlayer.playerWorldUnit.FaceUp();
+                                        EnterWorld();
+                                    }
+                                    else
+                                    {
+                                        mainPlayer.playerSceneUnit.MoveUp(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    }
                                 }
                                 else
                                 {
@@ -254,7 +385,22 @@ namespace GameCore
                             {
                                 if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1))
                                 {
-                                    mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    int sceneID = ResourceManager.sceneMapDictionary[currentSmapID].Enterable(mainPlayer.playerSceneUnit.coordinateX, mainPlayer.playerSceneUnit.coordinateY + 1);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceDown();
+                                        EnterScene(sceneID);
+                                    }
+                                    else if (sceneID == -1)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceDown();
+                                        mainPlayer.playerWorldUnit.FaceDown();
+                                        EnterWorld();
+                                    }
+                                    else
+                                    {
+                                        mainPlayer.playerSceneUnit.MoveDown(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    }
                                 }
                                 else
                                 {
@@ -269,7 +415,22 @@ namespace GameCore
                             {
                                 if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY))
                                 {
-                                    mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    int sceneID = ResourceManager.sceneMapDictionary[currentSmapID].Enterable(mainPlayer.playerSceneUnit.coordinateX - 1, mainPlayer.playerSceneUnit.coordinateY);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceLeft();
+                                        EnterScene(sceneID);
+                                    }
+                                    else if (sceneID == -1)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceLeft();
+                                        mainPlayer.playerWorldUnit.FaceLeft();
+                                        EnterWorld();
+                                    }
+                                    else
+                                    {
+                                        mainPlayer.playerSceneUnit.MoveLeft(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    }
                                 }
                                 else
                                 {
@@ -284,7 +445,22 @@ namespace GameCore
                             {
                                 if (ResourceManager.sceneMapDictionary[currentSmapID].Movable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY))
                                 {
-                                    mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    int sceneID = ResourceManager.sceneMapDictionary[currentSmapID].Enterable(mainPlayer.playerSceneUnit.coordinateX + 1, mainPlayer.playerSceneUnit.coordinateY);
+                                    if (sceneID >= 0)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceRight();
+                                        EnterScene(sceneID);
+                                    }
+                                    else if (sceneID == -1)
+                                    {
+                                        mainPlayer.playerSceneUnit.FaceRight();
+                                        mainPlayer.playerWorldUnit.FaceRight();
+                                        EnterWorld();
+                                    }
+                                    else
+                                    {
+                                        mainPlayer.playerSceneUnit.MoveRight(ConfigHandler.GetConfigValue_int("movespeed"), ConfigHandler.GetConfigValue_int("actspeed"));
+                                    }
                                 }
                                 else
                                 {
@@ -351,15 +527,6 @@ namespace GameCore
                                             }
                                         case MenuType.MenuType_Status:
                                             {
-                                                // update party list
-                                                activeMenu.subMenuList[activeMenu.subSelectedIndex].subMenuList.Clear();
-                                                foreach (int characterID in ResourceManager.mainPlayerData.partyMembersArray)
-                                                {
-                                                    if (characterID >= 0)
-                                                    {
-                                                        activeMenu.subMenuList[activeMenu.subSelectedIndex].subMenuList.Add(new Menu(MenuType.MenuType_Status_Each, ResourceManager.characterDictionary[characterID].characterName, characterID, activeMenu.subMenuList[activeMenu.subSelectedIndex], true));
-                                                    }
-                                                }
                                                 activeMenu = activeMenu.subMenuList[activeMenu.subSelectedIndex];
                                                 activeMenu.subSelectedIndex = 0;
                                                 return;
@@ -369,6 +536,205 @@ namespace GameCore
                                                 return;
                                             }
                                     }
+                                }
+                            case MenuType.MenuType_Item:
+                                {
+                                    Item targetItem = ResourceManager.itemDictionary[activeMenu.subSelectedIndex];
+                                    if (targetItem.type == 0)
+                                    {
+
+                                    }
+                                    else if (targetItem.type == 1)
+                                    {
+                                        if (activeMenu.subMenuList.Count == 0)
+                                        {
+                                            Menu chooseUserM = new Menu(MenuType.MenuType_Item_ChooseUser, "", activeMenu, true);
+                                            activeMenu.subMenuList.Add(chooseUserM);
+                                        }
+                                        activeMenu.subMenuList[0].menuName = "請選擇裝備人";
+                                        activeMenu = activeMenu.subMenuList[0];
+                                        activeMenu.subSelectedIndex = 0;
+                                    }
+                                    if (targetItem.type == 2)
+                                    {
+
+                                    }
+                                    else if (targetItem.type == 3)
+                                    {
+                                        if (activeMenu.subMenuList.Count == 0)
+                                        {
+                                            Menu chooseUserM = new Menu(MenuType.MenuType_Item_ChooseUser, "", activeMenu, true);
+                                            activeMenu.subMenuList.Add(chooseUserM);
+                                        }
+                                        activeMenu.subMenuList[0].menuName = "請選擇使用人";
+                                        activeMenu = activeMenu.subMenuList[0];
+                                        activeMenu.subSelectedIndex = 0;
+                                    }
+                                    else if (targetItem.type == 4)
+                                    {
+
+                                    }
+                                    return;
+                                }
+                            case MenuType.MenuType_Item_ChooseUser:
+                                {
+                                    Character targetCharacter = ResourceManager.characterDictionary[ResourceManager.mainPlayerData.partyMembersIDList[activeMenu.subSelectedIndex]];
+                                    Item targetItem = ResourceManager.itemDictionary[activeMenu.parentMenu.subSelectedIndex];
+                                    string useResult = "";
+                                    if (activeMenu.subMenuList.Count == 0)
+                                    {
+                                        Menu chooseUserM = new Menu(MenuType.MenuType_Item_UseResult, "", activeMenu, true);
+                                        activeMenu.subMenuList.Add(chooseUserM);
+                                    }
+                                    switch (targetItem.type)
+                                    {
+                                        case 1:
+                                            {
+                                                if (targetCharacter.CanEquip(targetItem.itemID))
+                                                {
+                                                    if (targetItem.equipType == 0)
+                                                    {
+                                                        if (targetCharacter.weapon >= 0)
+                                                        {
+                                                            if (ResourceManager.mainPlayerData.itemsIDList.Contains(targetCharacter.weapon))
+                                                            {
+                                                                ResourceManager.mainPlayerData.itemsCountList[ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetCharacter.weapon)]++;
+                                                            }
+                                                            targetCharacter.UnequipItem(targetCharacter.weapon);
+                                                        }
+                                                        targetCharacter.EquipItem(targetItem.itemID);
+                                                    }
+                                                    else if (targetItem.equipType == 1)
+                                                    {
+                                                        if (targetCharacter.armor >= 0)
+                                                        {
+                                                            if (ResourceManager.mainPlayerData.itemsIDList.Contains(targetCharacter.armor))
+                                                            {
+                                                                ResourceManager.mainPlayerData.itemsCountList[ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetCharacter.armor)]++;
+                                                            }
+                                                            targetCharacter.UnequipItem(targetCharacter.weapon);
+                                                        }
+                                                        targetCharacter.EquipItem(targetItem.itemID);
+                                                    }
+                                                    ResourceManager.mainPlayerData.itemsCountList[ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetItem.itemID)]--;
+                                                    if (ResourceManager.mainPlayerData.itemsCountList[ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetItem.itemID)] <= 0)
+                                                    {
+                                                        ResourceManager.mainPlayerData.itemsIDList.RemoveAt(ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetItem.itemID));
+                                                        ResourceManager.mainPlayerData.itemsCountList.RemoveAt(ResourceManager.mainPlayerData.itemsIDList.IndexOf(targetItem.itemID));
+                                                    }
+                                                    activeMenu = activeMenu.parentMenu;
+                                                    return;
+                                                }
+                                                else
+                                                {
+                                                    useResult = "該角色無法裝備該物品\n";
+                                                }
+                                                break;
+                                            }
+                                        case 3:
+                                            {
+                                                if (targetItem.addActiveLife > 0)
+                                                {
+                                                    useResult += "增加生命 ";
+                                                    targetCharacter.activeLife += targetItem.addActiveLife;
+                                                    if (targetCharacter.activeLife > targetCharacter.maxLife + targetCharacter.maxLifeExtra)
+                                                    {
+                                                        targetCharacter.activeLife = targetCharacter.maxLife + targetCharacter.maxLifeExtra;
+                                                    }
+                                                    useResult += targetItem.addActiveLife + "\n";
+                                                }
+                                                if (targetItem.addActivePower > 0)
+                                                {
+                                                    useResult += "增加内力 ";
+                                                    targetCharacter.activePower += targetItem.addActivePower;
+                                                    if (targetCharacter.activePower > targetCharacter.maxPower + targetCharacter.maxPowerExtra)
+                                                    {
+                                                        targetCharacter.activePower = targetCharacter.maxPower + targetCharacter.maxPowerExtra;
+                                                    }
+                                                    useResult += targetItem.addActivePower + "\n";
+                                                }
+                                                if (targetItem.addAntiTox > 0)
+                                                {
+                                                    useResult += "增加抗毒 ";
+                                                    targetCharacter.antiTox += targetItem.addAntiTox;
+                                                    if (targetCharacter.antiTox > 100)
+                                                    {
+                                                        targetCharacter.antiTox = 100;
+                                                    }
+                                                    useResult += targetItem.addAntiTox + "\n";
+                                                }
+                                                if (targetItem.addMaxLife > 0)
+                                                {
+                                                    useResult += "增加生命最大值 ";
+                                                    targetCharacter.maxLife += targetItem.addMaxLife;
+                                                    if (targetCharacter.maxLife > 10000)
+                                                    {
+                                                        targetCharacter.maxLife = 10000;
+                                                    }
+                                                    useResult += targetItem.addMaxLife + "\n";
+                                                }
+                                                if (targetItem.addMaxPower > 0)
+                                                {
+                                                    useResult += "增加内力最大值 ";
+                                                    targetCharacter.maxPower += targetItem.addMaxPower;
+                                                    if (targetCharacter.maxPower > 10000)
+                                                    {
+                                                        targetCharacter.maxPower = 10000;
+                                                    }
+                                                    useResult += targetItem.addMaxPower + "\n";
+                                                }
+                                                if (targetItem.addPhysical > 0)
+                                                {
+                                                    useResult += "增加體力 ";
+                                                    targetCharacter.physic += targetItem.addPhysical;
+                                                    if (targetCharacter.physic > 100)
+                                                    {
+                                                        targetCharacter.physic = 100;
+                                                    }
+                                                    useResult += targetItem.addPhysical + "\n";
+                                                }
+                                                if (targetItem.addPoisened > 0)
+                                                {
+                                                    useResult += "中毒程度 ";
+                                                    targetCharacter.poisoned += targetItem.addPoisened;
+                                                    if (targetCharacter.poisoned > 100)
+                                                    {
+                                                        targetCharacter.poisoned = 100;
+                                                    }
+                                                    else if (targetCharacter.poisoned < 0)
+                                                    {
+                                                        targetCharacter.poisoned = 0;
+                                                    }
+                                                    useResult += targetItem.addPoisened + "\n";
+                                                }
+                                                if (targetItem.changePowerType > 0)
+                                                {
+                                                    useResult += "改變内力性質 ";
+                                                    targetCharacter.powerType += targetItem.changePowerType;
+                                                    useResult += (targetItem.changePowerType == 0 ? "陽" : (targetItem.changePowerType == 1 ? "陰" : "調和")) + "\n";
+                                                }
+                                                ResourceManager.mainPlayerData.itemsCountList[activeMenu.parentMenu.subSelectedIndex] -= 1;
+                                                if (ResourceManager.mainPlayerData.itemsCountList[activeMenu.parentMenu.subSelectedIndex] <= 0)
+                                                {
+                                                    ResourceManager.mainPlayerData.itemsIDList.RemoveAt(activeMenu.parentMenu.subSelectedIndex);
+                                                    ResourceManager.mainPlayerData.itemsCountList.RemoveAt(activeMenu.parentMenu.subSelectedIndex);
+                                                }
+                                                break;
+                                            }
+                                        default:
+                                            {
+                                                return;
+                                            }
+                                    }
+
+                                    activeMenu.subMenuList[0].menuName = useResult;
+                                    activeMenu = activeMenu.subMenuList[0];
+                                    return;
+                                }
+                            case MenuType.MenuType_Item_UseResult:
+                                {
+                                    activeMenu = activeMenu.parentMenu;
+                                    return;
                                 }
                             case MenuType.MenuType_System:
                                 {
@@ -414,26 +780,43 @@ namespace GameCore
                     }
                 case "UpArrow":
                     {
-                        if (activeMenu.subMenuList.Count > 0)
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex -= 7;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Item_ChooseUser)
+                        {
+                            activeMenu.subSelectedIndex -= 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Status)
+                        {
+                            activeMenu.subSelectedIndex -= 1;
+                        }
+                        else if (activeMenu.subMenuList.Count > 0)
                         {
                             activeMenu.subSelectedIndex--;
                             if (activeMenu.subSelectedIndex < 0)
                             {
                                 activeMenu.subSelectedIndex = activeMenu.subMenuList.Count - 1;
-                            }
-                        }
-                        else
-                        {
-                            if (activeMenu.type == MenuType.MenuType_Item)
-                            {
-                                activeMenu.subSelectedIndex -= 7;
                             }
                         }
                         return;
                     }
                 case "DownArrow":
                     {
-                        if (activeMenu.subMenuList.Count > 0)
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex += 7;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Item_ChooseUser)
+                        {
+                            activeMenu.subSelectedIndex += 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Status)
+                        {
+                            activeMenu.subSelectedIndex += 1;
+                        }
+                        else if (activeMenu.subMenuList.Count > 0)
                         {
                             activeMenu.subSelectedIndex++;
                             if (activeMenu.subSelectedIndex >= activeMenu.subMenuList.Count)
@@ -441,18 +824,23 @@ namespace GameCore
                                 activeMenu.subSelectedIndex = 0;
                             }
                         }
-                        else
-                        {
-                            if (activeMenu.type == MenuType.MenuType_Item)
-                            {
-                                activeMenu.subSelectedIndex += 7;
-                            }
-                        }
                         return;
                     }
                 case "LeftArrow":
                     {
-                        if (activeMenu.subMenuList.Count > 0)
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex -= 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Item_ChooseUser)
+                        {
+                            activeMenu.subSelectedIndex -= 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Status)
+                        {
+                            activeMenu.subSelectedIndex -= 1;
+                        }
+                        else if (activeMenu.subMenuList.Count > 0)
                         {
                             activeMenu.subSelectedIndex--;
                             if (activeMenu.subSelectedIndex < 0)
@@ -460,30 +848,28 @@ namespace GameCore
                                 activeMenu.subSelectedIndex = activeMenu.subMenuList.Count - 1;
                             }
                         }
-                        else
-                        {
-                            if (activeMenu.type == MenuType.MenuType_Item)
-                            {
-                                activeMenu.subSelectedIndex -= 1;
-                            }
-                        }
                         return;
                     }
                 case "RightArrow":
                     {
-                        if (activeMenu.subMenuList.Count > 0)
+                        if (activeMenu.type == MenuType.MenuType_Item)
+                        {
+                            activeMenu.subSelectedIndex += 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Item_ChooseUser)
+                        {
+                            activeMenu.subSelectedIndex += 1;
+                        }
+                        else if (activeMenu.type == MenuType.MenuType_Status)
+                        {
+                            activeMenu.subSelectedIndex += 1;
+                        }
+                        else if (activeMenu.subMenuList.Count > 0)
                         {
                             activeMenu.subSelectedIndex++;
                             if (activeMenu.subSelectedIndex >= activeMenu.subMenuList.Count)
                             {
                                 activeMenu.subSelectedIndex = 0;
-                            }
-                        }
-                        else
-                        {
-                            if (activeMenu.type == MenuType.MenuType_Item)
-                            {
-                                activeMenu.subSelectedIndex += 1;
                             }
                         }
                         return;
@@ -513,38 +899,29 @@ namespace GameCore
 
         private void UpdatePlayer(int pmTimeElapsed)
         {
-            switch (mainPlayer.state)
+            switch (runtimeState)
             {
-                case PlayerState.PlayerState_World:
+                case RuntimeState.RuntimeState_World:
                     {
                         if (mainPlayer.playerWorldUnit.moving)
                         {
                             mainPlayer.playerWorldUnit.UpdateMoving(pmTimeElapsed);
-                            if (mainCamera.bondToPlayer)
-                            {
-                                mainCamera.ResetCamera(mainPlayer.playerWorldUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerWorldUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
-                            }
                         }
                         break;
                     }
-                case PlayerState.PlayerState_Scene:
+                case RuntimeState.RuntimeState_Scene:
                     {
                         if (mainPlayer.playerSceneUnit.moving)
                         {
                             mainPlayer.playerSceneUnit.UpdateMoving(pmTimeElapsed);
-                            if (mainCamera.bondToPlayer)
-                            {
-                                mainCamera.ResetCamera(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
-                            }
                         }
                         break;
                     }
-                case PlayerState.PlayerState_Battle:
+                case RuntimeState.RuntimeState_Battle:
                     {
                         if (mainPlayer.playerBattleUnit.moving)
                         {
                             mainPlayer.playerBattleUnit.UpdateMoving(pmTimeElapsed);
-                            mainCamera.ResetCamera(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
                         }
                         break;
                     }
@@ -583,6 +960,11 @@ namespace GameCore
 
         private void DrawMmap()
         {
+            if (mainCamera.bondToPlayer)
+            {
+                mainCamera.ResetCamera(mainPlayer.playerWorldUnit.screenBasePositionX - ConstManager.baseScreenSizeX / 2, mainPlayer.playerWorldUnit.screenBasePositionY - ConstManager.baseScreenSizeY / 2);
+            }
+
             int minX = mainPlayer.playerWorldUnit.coordinateX - 25, maxX = mainPlayer.playerWorldUnit.coordinateX + 25;
             int minY = mainPlayer.playerWorldUnit.coordinateY - 25, maxY = mainPlayer.playerWorldUnit.coordinateY + 25;
             if (minX < 0)
@@ -676,24 +1058,28 @@ namespace GameCore
 
         private void DrawSmap()
         {
+            if (mainCamera.bondToPlayer)
+            {
+                mainCamera.ResetCamera(mainPlayer.playerSceneUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerSceneUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
+            }
             for (int yCount = 0; yCount <= 63; yCount++)
             {
                 for (int xCount = 0; xCount <= 63; xCount++)
                 {
-                    if (ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount] != null)
+                    if (ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount] != null)
                     {
 
-                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
+                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
                         {
-                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureBytes,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureWidth,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureHeight);
+                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureBytes,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureWidth,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                            ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapX,
-                            ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].floorLayerMatrix[xCount, yCount].textureID].textureGapY);
+                            ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureGapX,
+                            ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].floorLayerMatrix[xCount, yCount].textureID].textureGapY);
                     }
                 }
             }
@@ -716,51 +1102,51 @@ namespace GameCore
                                 mainPlayer.playerSceneUnit.screenBasePositionX - ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureGapX,
                                 mainPlayer.playerSceneUnit.screenBasePositionY - ResourceManager.smapTextureStore[mainPlayer.playerSceneUnit.textureIDDictionary[mainPlayer.playerSceneUnit.actGroupIndex][mainPlayer.playerSceneUnit.actFrameIndex]].textureGapY);
                     }
-                    if (ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount] != null)
+                    if (ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount] != null)
                     {
 
-                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
+                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
                         {
-                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureBytes,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
+                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureBytes,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureWidth,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                            ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
-                            ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
+                            ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureGapX,
+                            ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureGapY);
                     }
 
-                    if (ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount] != null)
+                    if (ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount] != null)
                     {
-                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
+                        if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
                         {
-                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureBytes,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureWidth,
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureHeight);
+                            ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureBytes,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureWidth,
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureHeight);
                         }
-                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureD3D9,
+                        pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureD3D9,
                             this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                            ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureGapX,
-                            ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].hangLayerMatrix[xCount, yCount].textureID].textureGapY);
+                            ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureGapX,
+                            ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].hangLayerMatrix[xCount, yCount].textureID].textureGapY);
                     }
-                    if (ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount] != null)
+                    if (ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount] != null)
                     {
-                        if (ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID > 0)
+                        if (ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID > 0)
                         {
-                            if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9 == null)
+                            if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9 == null)
                             {
-                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9 = pen.CreateTexture(
-                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureBytes,
-                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureWidth,
-                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureHeight);
+                                ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9 = pen.CreateTexture(
+                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureBytes,
+                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureWidth,
+                                    ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureHeight);
                             }
-                            pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9,
+                            pen.DrawUnitTexture(ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureD3D9,
                                 this.mainCamera.GetValidPositionX(), this.mainCamera.GetValidPositionY(),
-                                ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureGapX,
-                                ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[0].eventLayerMatrix[xCount, yCount].startTextureID].textureGapY);
+                                ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].screenBasePositionX - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureGapX,
+                                ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].screenBasePositionY - ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].eventLayerMatrix[xCount, yCount].startTextureID].textureGapY);
                         }
                     }
                 }
@@ -769,6 +1155,7 @@ namespace GameCore
 
         private void DrawWmap()
         {
+            mainCamera.ResetCamera(mainPlayer.playerBattleUnit.screenBasePositionX - displayTargetForm.Width / unitTextureScaling / 2, mainPlayer.playerBattleUnit.screenBasePositionY - displayTargetForm.Height / unitTextureScaling / 2);
             for (int yCount = 0; yCount <= 63; yCount++)
             {
                 for (int xCount = 0; xCount <= 63; xCount++)
@@ -884,8 +1271,9 @@ namespace GameCore
                                 ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureD3D9 = pen.CreateTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureBytes, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureWidth, ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureHeight);
                             }
                             pen.DrawItemTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureD3D9, (float)displayTargetForm.Width / itemTextureScaling * 0.13f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureWidth / 2 / itemTextureScaling, (float)displayTargetForm.Height / itemTextureScaling * 0.07f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].textureHeight / 2 / itemTextureScaling);
-                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemName, 0.22f, 0.05f, System.Drawing.Color.White);
-                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemDescription, 0.22f, 0.11f, System.Drawing.Color.White);
+                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemName, 0.22f, 0.05f, System.Drawing.Color.Orange);
+                            pen.DrawMenuText(" 數量 ：" + ResourceManager.mainPlayerData.itemsCountList[pmTargetMenu.subSelectedIndex].ToString(), 0.52f, 0.05f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.subSelectedIndex]].itemDescription, 0.22f, 0.11f, System.Drawing.Color.Orange);
 
                             int totalCountPerPage = ConstManager.itemDisplayCountPerRow * ConstManager.itemDisplayColumnCountPerPage;
                             int startIndex = pmTargetMenu.subSelectedIndex / totalCountPerPage;
@@ -927,65 +1315,119 @@ namespace GameCore
                         }
                         return;
                     }
-                case MenuType.MenuType_Status:
+                case MenuType.MenuType_Item_ChooseUser:
                     {
-                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.224f, 0.02f + 0.05f * pmTargetMenu.subMenuList.Count, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
-                        pen.DrawRateLineRectangle(0.234f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
-                        for (int subCount = 0; subCount < pmTargetMenu.subMenuList.Count; subCount++)
+                        pen.DrawRateLineRectangle(0.1f, 0.1f, 0.9f, 0.25f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        pen.DrawRateLineRectangle(0.4f, 0.26f, 0.6f, 0.31f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        pen.DrawRateLineRectangle(0.433f, 0.32f, 0.567f, 0.32f + 0.05f * ResourceManager.mainPlayerData.partyMembersIDList.Count, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+
+                        if (pmTargetMenu.subSelectedIndex < 0)
+                        {
+                            pmTargetMenu.subSelectedIndex = 0;
+                        }
+                        if (pmTargetMenu.subSelectedIndex >= ResourceManager.mainPlayerData.partyMembersIDList.Count)
+                        {
+                            pmTargetMenu.subSelectedIndex = ResourceManager.mainPlayerData.partyMembersIDList.Count - 1;
+                        }
+
+                        Item targetItem = ResourceManager.itemDictionary[ResourceManager.mainPlayerData.itemsIDList[pmTargetMenu.parentMenu.subSelectedIndex]];
+                        pen.DrawItemTexture(ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + targetItem.itemID].textureD3D9,
+                            (float)displayTargetForm.Width / itemTextureScaling * 0.13f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + targetItem.itemID].textureWidth / 2 / itemTextureScaling,
+                            (float)displayTargetForm.Height / itemTextureScaling * 0.14f - ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex + targetItem.itemID].textureHeight / 2 / itemTextureScaling);
+                        pen.DrawMenuText(targetItem.itemName, 0.22f, 0.12f, System.Drawing.Color.Orange);
+                        pen.DrawMenuText(" 數量 ：" + ResourceManager.mainPlayerData.itemsCountList[pmTargetMenu.parentMenu.subSelectedIndex].ToString(), 0.52f, 0.12f, System.Drawing.Color.Yellow);
+                        pen.DrawMenuText(targetItem.itemDescription, 0.22f, 0.19f, System.Drawing.Color.Orange);
+                        pen.DrawMenuText(pmTargetMenu.menuName, 0.403f, 0.266f, System.Drawing.Color.Orange);
+                        for (int subCount = 0; subCount < ResourceManager.mainPlayerData.partyMembersIDList.Count; subCount++)
                         {
                             System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
                             if (subCount == pmTargetMenu.subSelectedIndex)
                             {
                                 menuItemColor = System.Drawing.Color.White;
                             }
-                            pen.DrawMenuText(pmTargetMenu.subMenuList[subCount].menuName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
+                            pen.DrawMenuText(ResourceManager.characterDictionary[ResourceManager.mainPlayerData.partyMembersIDList[subCount]].characterName,
+                                0.435f, 0.325f + 0.05f * subCount, menuItemColor);
                         }
-                        Character targetCharacter = ResourceManager.characterDictionary[pmTargetMenu.subMenuList[pmTargetMenu.subSelectedIndex].contexID];
-                        if (ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 == null)
+                        return;
+                    }
+                case MenuType.MenuType_Item_UseResult:
+                    {
+                        int lineCount = pmTargetMenu.menuName.Length - pmTargetMenu.menuName.Replace("\n", "").Length;
+                        pen.DrawRateLineRectangle(0.3f, 0.3f, 0.7f, 0.3f + 0.05f * lineCount, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+
+                        pen.DrawMenuText(pmTargetMenu.menuName, 0.31f, 0.305f, System.Drawing.Color.Orange);
+                        return;
+                    }
+                case MenuType.MenuType_Status:
+                    {
+                        pen.DrawRateLineRectangle(0.09f, 0.02f, 0.224f, 0.02f + 0.05f * ResourceManager.mainPlayerData.partyMembersIDList.Count, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        pen.DrawRateLineRectangle(0.234f, 0.02f, 0.99f, 0.99f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+                        if (pmTargetMenu.subSelectedIndex < 0)
                         {
-                            ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 = pen.CreateTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureBytes, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight);
+                            pmTargetMenu.subSelectedIndex = 0;
                         }
-                        pen.DrawPortraitTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9,
-                            (float)displayTargetForm.Width / portraitTextureScaling * 0.35f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth / 2 / portraitTextureScaling, (float)displayTargetForm.Height / portraitTextureScaling * 0.15f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight / 2 / portraitTextureScaling);
+                        if (pmTargetMenu.subSelectedIndex >= ResourceManager.mainPlayerData.partyMembersIDList.Count)
+                        {
+                            pmTargetMenu.subSelectedIndex = ResourceManager.mainPlayerData.partyMembersIDList.Count - 1;
+                        }
+                        if (ResourceManager.mainPlayerData.partyMembersIDList.Count > pmTargetMenu.subSelectedIndex)
+                        {
+                            for (int subCount = 0; subCount < ResourceManager.mainPlayerData.partyMembersIDList.Count; subCount++)
+                            {
+                                System.Drawing.Color menuItemColor = System.Drawing.Color.DarkOrange;
+                                if (subCount == pmTargetMenu.subSelectedIndex)
+                                {
+                                    menuItemColor = System.Drawing.Color.White;
+                                }
+                                pen.DrawMenuText(ResourceManager.characterDictionary[ResourceManager.mainPlayerData.partyMembersIDList[subCount]].characterName, 0.095f, 0.025f + 0.05f * subCount, menuItemColor);
+                            }
+                            Character targetCharacter = ResourceManager.characterDictionary[ResourceManager.mainPlayerData.partyMembersIDList[pmTargetMenu.subSelectedIndex]];
+                            if (ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 == null)
+                            {
+                                ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9 = pen.CreateTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureBytes, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth, ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight);
+                            }
+                            pen.DrawPortraitTexture(ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureD3D9,
+                                (float)displayTargetForm.Width / portraitTextureScaling * 0.33f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureWidth / 2 / portraitTextureScaling, (float)displayTargetForm.Height / portraitTextureScaling * 0.15f - ResourceManager.portraitTextureStore[targetCharacter.characterPortrait].textureHeight / 2 / portraitTextureScaling);
 
-                        pen.DrawMenuText("等級", 0.25f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.level.ToString(), 0.35f, 0.3f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("經驗", 0.25f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.exp.ToString(), 0.35f, 0.35f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("生命", 0.25f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activeLife.ToString() + "/" + targetCharacter.maxLife.ToString(), 0.35f, 0.45f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("内力", 0.25f, 0.5f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activePower.ToString() + "/" + targetCharacter.maxPower.ToString(), 0.35f, 0.5f, targetCharacter.powerType == 2 ? System.Drawing.Color.White : (targetCharacter.powerType == 0 ? System.Drawing.Color.Yellow : System.Drawing.Color.Purple));
-                        pen.DrawMenuText("體力", 0.25f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.physic.ToString(), 0.35f, 0.55f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("中毒", 0.25f, 0.65f, System.Drawing.Color.Green); pen.DrawMenuText(targetCharacter.poisoned.ToString(), 0.35f, 0.65f, System.Drawing.Color.Green);
-                        pen.DrawMenuText("内傷", 0.25f, 0.7f, System.Drawing.Color.Red); pen.DrawMenuText(targetCharacter.injury.ToString(), 0.35f, 0.7f, System.Drawing.Color.Red);
-                        pen.DrawMenuText("武器", 0.25f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.weapon].itemName, 0.35f, 0.8f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("防具", 0.25f, 0.85f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.armor].itemName, 0.35f, 0.85f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("等級", 0.25f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.level.ToString(), 0.33f, 0.3f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("經驗", 0.25f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.exp.ToString(), 0.33f, 0.35f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("生命", 0.25f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activeLife.ToString() + "/" + targetCharacter.maxLife.ToString() + GetExtraDisplay(targetCharacter.maxLifeExtra), 0.33f, 0.45f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("内力", 0.25f, 0.5f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.activePower.ToString() + "/" + targetCharacter.maxPower.ToString() + GetExtraDisplay(targetCharacter.maxPowerExtra), 0.33f, 0.5f, targetCharacter.powerType == 2 ? System.Drawing.Color.White : (targetCharacter.powerType == 0 ? System.Drawing.Color.Yellow : System.Drawing.Color.Purple));
+                            pen.DrawMenuText("體力", 0.25f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.physic.ToString(), 0.33f, 0.55f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("中毒", 0.25f, 0.65f, System.Drawing.Color.Green); pen.DrawMenuText(targetCharacter.poisoned.ToString(), 0.33f, 0.65f, System.Drawing.Color.Green);
+                            pen.DrawMenuText("内傷", 0.25f, 0.7f, System.Drawing.Color.Red); pen.DrawMenuText(targetCharacter.injury.ToString(), 0.33f, 0.7f, System.Drawing.Color.Red);
+                            pen.DrawMenuText("武器", 0.25f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.weapon].itemName, 0.33f, 0.8f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("防具", 0.25f, 0.85f, System.Drawing.Color.Orange); pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.armor].itemName, 0.33f, 0.85f, System.Drawing.Color.Yellow);
 
-                        pen.DrawMenuText("攻擊", 0.5f, 0.1f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.attack.ToString(), 0.6f, 0.1f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("防禦", 0.5f, 0.15f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.defence.ToString(), 0.6f, 0.15f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("輕功", 0.5f, 0.2f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.move.ToString(), 0.6f, 0.2f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("拳脚", 0.5f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.fist.ToString(), 0.6f, 0.3f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("御劍", 0.5f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.sword.ToString(), 0.6f, 0.35f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("耍刀", 0.5f, 0.4f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.blade.ToString(), 0.6f, 0.4f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("奇門", 0.5f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.special.ToString(), 0.6f, 0.45f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("暗器", 0.5f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.hidden.ToString(), 0.6f, 0.55f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("用毒", 0.5f, 0.6f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.tox.ToString(), 0.6f, 0.6f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("醫療", 0.5f, 0.7f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.medical.ToString(), 0.6f, 0.7f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("解毒", 0.5f, 0.75f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.detox.ToString(), 0.6f, 0.75f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("抗毒", 0.5f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.antiTox.ToString(), 0.6f, 0.8f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("攻擊", 0.5f, 0.1f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.attack.ToString() + GetExtraDisplay(targetCharacter.attackExtra), 0.58f, 0.1f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("防禦", 0.5f, 0.15f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.defence.ToString() + GetExtraDisplay(targetCharacter.defenceExtra), 0.58f, 0.15f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("輕功", 0.5f, 0.2f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.move.ToString() + GetExtraDisplay(targetCharacter.moveExtra), 0.58f, 0.2f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("拳脚", 0.5f, 0.3f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.fist.ToString() + GetExtraDisplay(targetCharacter.fistExtra), 0.58f, 0.3f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("御劍", 0.5f, 0.35f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.sword.ToString() + GetExtraDisplay(targetCharacter.swordExtra), 0.58f, 0.35f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("耍刀", 0.5f, 0.4f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.blade.ToString() + GetExtraDisplay(targetCharacter.bladeExtra), 0.58f, 0.4f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("奇門", 0.5f, 0.45f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.special.ToString() + GetExtraDisplay(targetCharacter.specialExtra), 0.58f, 0.45f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("暗器", 0.5f, 0.55f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.hidden.ToString() + GetExtraDisplay(targetCharacter.hiddenExtra), 0.58f, 0.55f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("用毒", 0.5f, 0.6f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.tox.ToString(), 0.58f, 0.6f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("醫療", 0.5f, 0.7f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.medical.ToString(), 0.58f, 0.7f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("解毒", 0.5f, 0.75f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.detox.ToString(), 0.58f, 0.75f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("抗毒", 0.5f, 0.8f, System.Drawing.Color.Orange); pen.DrawMenuText(targetCharacter.antiTox.ToString() + GetExtraDisplay(targetCharacter.antiToxExtra), 0.58f, 0.8f, System.Drawing.Color.Yellow);
 
-                        pen.DrawMenuText("所學武功", 0.75f, 0.1f, System.Drawing.Color.Orange);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[0]].skillName, 0.7f, 0.15f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[0] / 100 + 1).ToString(), 0.9f, 0.15f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[1]].skillName, 0.7f, 0.2f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[1] / 100 + 1).ToString(), 0.9f, 0.2f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[2]].skillName, 0.7f, 0.25f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[2] / 100 + 1).ToString(), 0.9f, 0.25f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[3]].skillName, 0.7f, 0.3f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[3] / 100 + 1).ToString(), 0.9f, 0.3f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[4]].skillName, 0.7f, 0.35f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[4] / 100 + 1).ToString(), 0.9f, 0.35f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[5]].skillName, 0.7f, 0.4f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[5] / 100 + 1).ToString(), 0.9f, 0.4f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[6]].skillName, 0.7f, 0.45f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[6] / 100 + 1).ToString(), 0.9f, 0.45f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[7]].skillName, 0.7f, 0.5f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[7] / 100 + 1).ToString(), 0.9f, 0.5f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[8]].skillName, 0.7f, 0.55f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[8] / 100 + 1).ToString(), 0.9f, 0.55f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[9]].skillName, 0.7f, 0.6f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[9] / 100 + 1).ToString(), 0.9f, 0.6f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("修煉物品", 0.75f, 0.7f, System.Drawing.Color.Orange);
-                        pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.trainingItem].itemName, 0.75f, 0.75f, System.Drawing.Color.Yellow);
-                        pen.DrawMenuText("修煉經驗", 0.75f, 0.8f, System.Drawing.Color.Orange);
-                        pen.DrawMenuText(targetCharacter.trainingEXP.ToString(), 0.75f, 0.85f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("所學武功", 0.75f, 0.1f, System.Drawing.Color.Orange);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[0]].skillName, 0.75f, 0.15f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[0] / 100 + 1).ToString(), 0.95f, 0.15f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[1]].skillName, 0.75f, 0.2f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[1] / 100 + 1).ToString(), 0.95f, 0.2f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[2]].skillName, 0.75f, 0.25f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[2] / 100 + 1).ToString(), 0.95f, 0.25f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[3]].skillName, 0.75f, 0.3f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[3] / 100 + 1).ToString(), 0.95f, 0.3f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[4]].skillName, 0.75f, 0.35f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[4] / 100 + 1).ToString(), 0.95f, 0.35f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[5]].skillName, 0.75f, 0.4f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[5] / 100 + 1).ToString(), 0.95f, 0.4f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[6]].skillName, 0.75f, 0.45f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[6] / 100 + 1).ToString(), 0.95f, 0.45f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[7]].skillName, 0.75f, 0.5f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[7] / 100 + 1).ToString(), 0.95f, 0.5f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[8]].skillName, 0.75f, 0.55f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[8] / 100 + 1).ToString(), 0.95f, 0.55f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText(ResourceManager.skillDictionary[targetCharacter.skillsIDArray[9]].skillName, 0.75f, 0.6f, System.Drawing.Color.Yellow); pen.DrawMenuText((targetCharacter.skillsLevelArray[9] / 100 + 1).ToString(), 0.95f, 0.6f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("修煉物品", 0.75f, 0.7f, System.Drawing.Color.Orange);
+                            pen.DrawMenuText(ResourceManager.itemDictionary[targetCharacter.trainingItem].itemName, 0.75f, 0.75f, System.Drawing.Color.Yellow);
+                            pen.DrawMenuText("修煉經驗", 0.75f, 0.8f, System.Drawing.Color.Orange);
+                            pen.DrawMenuText(targetCharacter.trainingEXP.ToString(), 0.75f, 0.85f, System.Drawing.Color.Yellow);
+                        }
 
                         if (pmTargetMenu.drawParents)
                         {
@@ -1035,6 +1477,41 @@ namespace GameCore
                     }
             }
         }
+
+        private void DrawConstEventInstruction()
+        {
+            if (currentConstEventInstruction != null)
+            {
+                pen.BeginInstructionDrawing();
+                switch (currentConstEventInstruction.type)
+                {
+                    case InstructionType.InstructionType_ScreenGettingDark:
+                        {
+                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentConstEventInstruction.instructionParametersArray[0], System.Drawing.Color.Black));
+                            break;
+                        }
+                    case InstructionType.InstructionType_ScreenGettingBright:
+                        {
+                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentConstEventInstruction.instructionParametersArray[0], System.Drawing.Color.Black));
+                            break;
+                        }
+                    default:
+                        {
+                            break;
+                        }
+                }
+                pen.EndInstructionDrawing();
+            }
+        }
+
+        private void DrawDebug()
+        {
+            pen.BeginDebugDrawing();
+            pen.DrawRateLineRectangle(0.01f, 0.8f, 0.5f, 0.98f, System.Drawing.Color.White, System.Drawing.Color.FromArgb(200, System.Drawing.Color.Black));
+            pen.DrawDebugText(runtimeState.ToString() + "\nWorld : " + mainPlayer.playerWorldUnit.coordinateX + "," + mainPlayer.playerWorldUnit.coordinateY + "\nScene : " + currentSmapID + " " + mainPlayer.playerSceneUnit.coordinateX + "," + mainPlayer.playerSceneUnit.coordinateY,
+                0.015f, 0.805f, System.Drawing.Color.Blue);
+            pen.EndDebugDrawing();
+        }
         #endregion
 
         #region Command
@@ -1057,8 +1534,7 @@ namespace GameCore
 
                 this.unitTextureScaling = (float)displayTargetForm.Width / (float)ConstManager.baseScreenSizeX;
                 this.portraitTextureScaling = (float)ConstManager.basePortraitSize / (float)ResourceManager.portraitTextureStore[0].textureWidth;
-                this.itemTextureScaling = (float)ConstManager.baseItemSize / (float)ResourceManager.mmapTextureStore[3501].textureWidth;
-
+                this.itemTextureScaling = (float)ConstManager.baseItemSize / (float)ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex].textureWidth;
                 pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height, unitTextureScaling, portraitTextureScaling, itemTextureScaling);
                 controller = new MediaCore.InputOperator(displayTargetForm);
 
@@ -1096,22 +1572,28 @@ namespace GameCore
         }
         #endregion
 
+        private string GetExtraDisplay(int pmExtraValue)
+        {
+            return pmExtraValue != 0 ? ((pmExtraValue > 0 ? " +" : " ") + pmExtraValue.ToString()) : "";
+        }
+
         #region debug
         private void DebugAdjusting()
         {
-            ResourceManager.mainPlayerData.partyMembersArray[1] = 3;
-            ResourceManager.mainPlayerData.partyMembersArray[2] = 13;
-            ResourceManager.mainPlayerData.partyMembersArray[3] = 23;
-            ResourceManager.mainPlayerData.partyMembersArray[4] = 62;
-            ResourceManager.mainPlayerData.partyMembersArray[5] = 43;
-            ResourceManager.mainPlayerData.partyMembersArray[6] = 291;
-            ResourceManager.mainPlayerData.partyMembersArray[7] = 27;
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(3);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(23);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(62);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(43);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(291);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(27);
+            ResourceManager.mainPlayerData.partyMembersIDList.Add(13);
             Random rdTest = new Random();
-            for (int checkID = 0; checkID < 200; checkID++)
+            for (int checkID = 0; checkID < 600; checkID++)
             {
                 ResourceManager.mainPlayerData.itemsIDList.Add(checkID);
                 ResourceManager.mainPlayerData.itemsCountList.Add(rdTest.Next(1, 1000));
             }
+            ResourceManager.characterDictionary[62].activeLife = 43;
 
             // player img ids in mmap and smap are the same
             List<int> goUpTextures = new List<int>();
@@ -1183,11 +1665,10 @@ namespace GameCore
             this.mainPlayer.playerBattleUnit.textureIDDictionary.Add(1, battleRightTextures);
             this.mainPlayer.playerBattleUnit.textureIDDictionary.Add(2, battleLeftTextures);
             this.mainPlayer.playerBattleUnit.textureIDDictionary.Add(3, battleDownTextures);
-
+            mainPlayer.playerWorldUnit.SetFixedCoordinate(85, 96);
             this.mainCamera.ResetCamera(-400, 200);
             this.mainCamera.BindToPlayer();
 
-            this.mainPlayer.EnterWorld();
             //this.mainPlayer.EnterScene(0, 0);
             //this.mainPlayer.playerSceneUnit.SetFixedCoordinate(25, 39);
             //this.mainPlayer.EnterBattle(0);

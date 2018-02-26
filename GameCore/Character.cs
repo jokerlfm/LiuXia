@@ -60,10 +60,160 @@ namespace GameCore
         public int[] skillsLevelArray;
         public int[] itemsIDList;
         public int[] itemsCountArray;
+
+        public int maxLifeExtra = 0;
+        public int maxPowerExtra = 0;
+        public int attackExtra = 0;
+        public int moveExtra = 0;
+        public int defenceExtra = 0;
+        public int antiToxExtra = 0;
+        public int fistExtra = 0;
+        public int swordExtra = 0;
+        public int bladeExtra = 0;
+        public int specialExtra = 0;
+        public int hiddenExtra = 0;
+        public int attackWithToxExtra = 0;
         #endregion
 
         #region business
+        public bool EquipItem(int pmItemID)
+        {
+            // todo check requirement
 
+            Item targetItem = ResourceManager.itemDictionary[pmItemID];
+            if (targetItem.equipType == 0)
+            {
+                if (weapon >= 0)
+                {
+                    return false;
+                }
+                weapon = pmItemID;
+            }
+            else if (targetItem.equipType == 1)
+            {
+                if (armor >= 0)
+                {
+                    return false;
+                }
+                armor = pmItemID;
+            }
+            if (targetItem.addAntiTox != 0)
+            {
+                antiToxExtra += targetItem.addAntiTox;
+            }
+            if (targetItem.addAttack != 0)
+            {
+                attackExtra += targetItem.addAttack;
+            }
+            if (targetItem.addAttackWithTox != 0)
+            {
+                attackWithToxExtra += targetItem.addAttackWithTox;
+            }
+            if (targetItem.addBlade != 0)
+            {
+                bladeExtra += targetItem.addBlade;
+            }
+            if (targetItem.addDefence != 0)
+            {
+                defenceExtra += targetItem.addDefence;
+            }
+            if (targetItem.addMaxPower != 0)
+            {
+                fistExtra += targetItem.addMaxPower;
+            }
+            if (targetItem.addHidden != 0)
+            {
+                hiddenExtra += targetItem.addHidden;
+            }
+            if (targetItem.addMaxLife != 0)
+            {
+                maxLifeExtra += targetItem.addMaxLife;
+            }
+            if (targetItem.addMaxPower != 0)
+            {
+                maxPowerExtra += targetItem.addMaxPower;
+            }
+            if (targetItem.addMove != 0)
+            {
+                moveExtra += targetItem.addMove;
+            }
+            if (targetItem.addSpecial != 0)
+            {
+                specialExtra += targetItem.addSpecial;
+            }
+            if (targetItem.addSword != 0)
+            {
+                swordExtra += targetItem.addSword;
+            }
+
+            return true;
+        }
+
+        public void UnequipItem(int pmItemID)
+        {
+            Item targetItem = ResourceManager.itemDictionary[pmItemID];
+            if (targetItem.equipType == 0)
+            {
+                weapon = -1;
+            }
+            else if (targetItem.equipType == 1)
+            {
+                armor = -1;
+            }
+            if (targetItem.addAntiTox != 0)
+            {
+                antiToxExtra -= targetItem.addAntiTox;
+            }
+            if (targetItem.addAttack != 0)
+            {
+                attackExtra -= targetItem.addAttack;
+            }
+            if (targetItem.addAttackWithTox != 0)
+            {
+                attackWithToxExtra -= targetItem.addAttackWithTox;
+            }
+            if (targetItem.addBlade != 0)
+            {
+                bladeExtra -= targetItem.addBlade;
+            }
+            if (targetItem.addDefence != 0)
+            {
+                defenceExtra -= targetItem.addDefence;
+            }
+            if (targetItem.addMaxPower != 0)
+            {
+                fistExtra -= targetItem.addMaxPower;
+            }
+            if (targetItem.addHidden != 0)
+            {
+                hiddenExtra -= targetItem.addHidden;
+            }
+            if (targetItem.addMaxLife != 0)
+            {
+                maxLifeExtra -= targetItem.addMaxLife;
+            }
+            if (targetItem.addMaxPower != 0)
+            {
+                maxPowerExtra -= targetItem.addMaxPower;
+            }
+            if (targetItem.addMove != 0)
+            {
+                moveExtra -= targetItem.addMove;
+            }
+            if (targetItem.addSpecial != 0)
+            {
+                specialExtra -= targetItem.addSpecial;
+            }
+            if (targetItem.addSword != 0)
+            {
+                swordExtra -= targetItem.addSword;
+            }
+        }
+
+        public bool CanEquip(int itemID)
+        {
+            return false;
+        }
         #endregion
     }
 }

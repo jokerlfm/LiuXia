@@ -14,11 +14,11 @@ namespace GameCore
             this.buildingLayerMatrix = new FixedUnit[64, 64];
             this.hangLayerMatrix = new FixedUnit[64, 64];
             this.eventLayerMatrix = new EventUnit[64, 64];
-            destMatrix = new Entrance[64, 64];
+            entranceMatrix = new Entrance[64, 64];
         }
 
         #region declaration
-        public int mapID = 0;        
+        public int mapID = 0;
         public int enterMusicID = 0;
         public int exitMusicID = 0;
         public int opened = 0;
@@ -27,7 +27,7 @@ namespace GameCore
         public FixedUnit[,] buildingLayerMatrix;
         public FixedUnit[,] hangLayerMatrix;
         public EventUnit[,] eventLayerMatrix;
-        public Entrance[,] destMatrix;
+        public Entrance[,] entranceMatrix;
         #endregion
 
         #region business
@@ -52,6 +52,27 @@ namespace GameCore
                 }
             }
             return true;
+        }
+
+        public int Enterable(int pmTargetCoordinateX, int pmTargetCoordinateY)
+        {
+            if (pmTargetCoordinateX < 0 || pmTargetCoordinateX >= 64 || pmTargetCoordinateY < 0 || pmTargetCoordinateY >= 64)
+            {
+                return -2;
+            }
+            else if (entranceMatrix[pmTargetCoordinateX, pmTargetCoordinateY] != null)
+            {
+                if (entranceMatrix[pmTargetCoordinateX, pmTargetCoordinateY].destMapType == MapType.Scene)
+                {
+                    return entranceMatrix[pmTargetCoordinateX, pmTargetCoordinateY].sceneID;
+                }
+                else if (entranceMatrix[pmTargetCoordinateX, pmTargetCoordinateY].destMapType == MapType.World)
+                {
+                    return -1;
+                }
+            }
+
+            return -2;
         }
         #endregion
     }
