@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MingCore", "MingCore\MingCo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimDXTestForm", "SlimDXTestForm\SlimDXTestForm.csproj", "{52DA60F5-A9A9-419C-B576-A515B407517D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpDXTest", "SharpDXTest\SharpDXTest.csproj", "{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{52DA60F5-A9A9-419C-B576-A515B407517D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{52DA60F5-A9A9-419C-B576-A515B407517D}.Release|x86.ActiveCfg = Release|Any CPU
 		{52DA60F5-A9A9-419C-B576-A515B407517D}.Release|x86.Build.0 = Release|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Debug|x86.Build.0 = Debug|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Release|x86.ActiveCfg = Release|Any CPU
+		{39CD14BC-47C9-4E9F-A6ED-EE79ED8BF243}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

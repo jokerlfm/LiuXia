@@ -9,9 +9,9 @@ using System.Text;
 
 namespace MediaCore
 {
-    public class DrawOperator
+    public class SlimDX11Operator
     {
-        public DrawOperator(IntPtr pmTargetHandle, int pmWidth, int pmHeight, float pmUnitTextureScaling, float pmPortraitTextureScaling, float pmItemTextureScaling)
+        public SlimDX11Operator(IntPtr pmTargetHandle, int pmWidth, int pmHeight, float pmUnitTextureScaling, float pmPortraitTextureScaling, float pmItemTextureScaling)
         {
             this.clientWidth = pmWidth;
             this.clientHeight = pmHeight;
@@ -26,7 +26,7 @@ namespace MediaCore
                 Windowed = true
             });
             menuTextSprite = new Sprite(mainDevice);
-            instructionTextureSprite = new Sprite(mainDevice);
+            scriptSprite = new Sprite(mainDevice);
             instructionTextSprite = new Sprite(mainDevice);
             debugTextSprite = new Sprite(mainDevice);
             this.unitTextureSprite = new Sprite(mainDevice);
@@ -59,7 +59,7 @@ namespace MediaCore
         public Sprite menuTextSprite;
         public Sprite portraitTextureSprite;
         public Sprite itemTextureSprite;
-        public Sprite instructionTextureSprite;
+        public Sprite scriptSprite;
         public Sprite instructionTextSprite;
 
         public Sprite debugTextSprite;
@@ -144,15 +144,15 @@ namespace MediaCore
             debugTextSprite.End();
         }
 
-        public void BeginInstructionDrawing()
+        public void BeginScriptDrawing()
         {
-            instructionTextureSprite.Begin(SpriteFlags.AlphaBlend);
+            scriptSprite.Begin(SpriteFlags.AlphaBlend);
             instructionTextSprite.Begin(SpriteFlags.AlphaBlend);
         }
 
-        public void EndInstructionDrawing()
+        public void EndScriptDrawing()
         {
-            instructionTextureSprite.End();
+            scriptSprite.End();
             instructionTextSprite.End();
         }
 

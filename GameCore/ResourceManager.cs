@@ -27,7 +27,6 @@ namespace GameCore
 
         public static PlayerData mainPlayerData;
         public static Dictionary<MenuType, Menu> menuDictionary;
-        public static Dictionary<int, Event> constEventDictionary;
 
         private static int selfIncreaseCount = 0;
         private static int SelfIncreaseCount
@@ -50,8 +49,7 @@ namespace GameCore
             musicStore = new Dictionary<int, byte[]>();
 
             LoadNP();
-            GenerateMenus();
-            GenerateConstEvents();
+            GenerateMenus();            
             LoadDynamicEvents();
 
             GameService game = GameService.GetGame();
@@ -64,27 +62,7 @@ namespace GameCore
         {
 
         }
-
-        private static void GenerateConstEvents()
-        {
-            constEventDictionary = new Dictionary<int, Event>();
-            Instruction gettingDarkInstruction = new Instruction(0);
-            gettingDarkInstruction.type = InstructionType.InstructionType_ScreenGettingDark;
-            gettingDarkInstruction.instructionParametersArray[0] = 0;
-            Event gettingDarkEvent = new Event(0);
-            gettingDarkEvent.type = EventType.EventType_ConstEvent;
-            gettingDarkEvent.instructionDictionary.Add(gettingDarkInstruction.instructionID, gettingDarkInstruction);
-            constEventDictionary.Add(gettingDarkEvent.eventID, gettingDarkEvent);
-
-            Instruction gettingBrightInstruction = new Instruction(0);
-            gettingBrightInstruction.type = InstructionType.InstructionType_ScreenGettingBright;
-            gettingBrightInstruction.instructionParametersArray[0] = 0;
-            Event gettingBrightEvent = new Event(1);
-            gettingBrightEvent.type = EventType.EventType_ConstEvent;            
-            gettingBrightEvent.instructionDictionary.Add(gettingBrightInstruction.instructionID, gettingBrightInstruction);
-            constEventDictionary.Add(gettingBrightEvent.eventID, gettingBrightEvent);
-        }
-
+        
         private static void DataAdjustion()
         {
             foreach (Character eachC in characterDictionary.Values)
@@ -271,7 +249,7 @@ namespace GameCore
                     battleMapDictionary.Add(checkCount, eachBM);
                     checkCount++;
                 }
-            }
+            }            
         }
 
         private static void GenerateMenus()

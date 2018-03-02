@@ -11,7 +11,7 @@ namespace GameCore
         private GameService(string pmGameName, System.Windows.Forms.Form pmTargetForm = null)
         {
             this.gameName = pmGameName;
-            currentConstEventInstruction = null;
+            currentScriptParameters = new int[10];
             displayTargetForm = pmTargetForm;
         }
 
@@ -23,7 +23,7 @@ namespace GameCore
         public RuntimeState runtimeState = RuntimeState.RuntimeState_World;
         public GameRunningState state = GameRunningState.GameRunningState_Stopped;
 
-        public MediaCore.DrawOperator pen;
+        public MediaCore.SlimDX11Operator pen;
         public MediaCore.InputOperator controller;
 
         public CameraUnit mainCamera;
@@ -31,7 +31,8 @@ namespace GameCore
         public Menu activeMenu;
         public int currentSmapID = 0;
         public int currentWmapID = 0;
-        public Instruction currentConstEventInstruction;
+        public int currentScriptID = -1;
+        public int[] currentScriptParameters;
         public bool isFullScreen = false;
         public float unitTextureScaling = 0;
         public float portraitTextureScaling = 0;
@@ -56,18 +57,18 @@ namespace GameCore
         #region Core operatrion
         public void EnterWorld()
         {
-            ExecuteConstEvent(0);
+            ExecuteScript(0);
             runtimeState = RuntimeState.RuntimeState_World;
-            ExecuteConstEvent(1);
+            ExecuteScript(1);
         }
 
         public void EnterScene(int pmSmapID)
         {
             currentSmapID = pmSmapID;
             mainPlayer.playerSceneUnit.SetFixedCoordinate(ResourceManager.sceneMapDictionary[currentSmapID].playerEnterCoordinateX, ResourceManager.sceneMapDictionary[currentSmapID].playerEnterCoordinateY);
-            ExecuteConstEvent(0);
+            ExecuteScript(0);
             runtimeState = RuntimeState.RuntimeState_Scene;
-            ExecuteConstEvent(1);
+            ExecuteScript(1);
         }
 
         public void EnterBattle(int pmWmapID)
@@ -75,61 +76,57 @@ namespace GameCore
 
         }
 
-        public void ExecuteConstEvent(int pmEventID)
+        public void ExecuteScript(int pmScriptID)
         {
-            Event targetEvent = ResourceManager.constEventDictionary[pmEventID];
-            int checkIKey = 0;
-            while (checkIKey <= targetEvent.instructionDictionary.Keys.Max())
+            currentScriptID = pmScriptID;
+            switch (pmScriptID)
             {
-                currentConstEventInstruction = targetEvent.instructionDictionary[checkIKey];
-                switch (currentConstEventInstruction.type)
-                {
-                    case InstructionType.InstructionType_ScreenGettingDark:
+                case 0:
+                    {
+                        // getting dark
+                        currentScriptParameters[0] = 0;
+                        int checkTime = 0;
+                        while (checkTime < 500)
                         {
-                            currentConstEventInstruction.instructionParametersArray[0] = 0;
-                            int checkTime = 0;
-                            while (checkTime < 500)
+                            if (currentScriptParameters[0] <= 205)
                             {
-                                if (currentConstEventInstruction.instructionParametersArray[0] <= 205)
-                                {
-                                    currentConstEventInstruction.instructionParametersArray[0] += 50;
-                                }
-                                else
-                                {
-                                    currentConstEventInstruction.instructionParametersArray[0] = 255;
-                                }
-                                Thread.Sleep(50);
-                                checkTime += 50;
+                                currentScriptParameters[0] += 50;
                             }
-                            break;
-                        }
-                    case InstructionType.InstructionType_ScreenGettingBright:
-                        {
-                            currentConstEventInstruction.instructionParametersArray[0] = 255;
-                            int checkTime = 0;
-                            while (checkTime < 500)
+                            else
                             {
-                                if (currentConstEventInstruction.instructionParametersArray[0] >= 50)
-                                {
-                                    currentConstEventInstruction.instructionParametersArray[0] -= 50;
-                                }
-                                else
-                                {
-                                    currentConstEventInstruction.instructionParametersArray[0] = 0;
-                                }
-                                Thread.Sleep(50);
-                                checkTime += 50;
+                                currentScriptParameters[0] = 255;
                             }
-                            break;
+                            Thread.Sleep(50);
+                            checkTime += 50;
                         }
-                    default:
+                        break;
+                    }
+                case 1:
+                    {
+                        // getting bright
+                        currentScriptParameters[0] = 255;
+                        int checkTime = 0;
+                        while (checkTime < 500)
                         {
-                            break;
+                            if (currentScriptParameters[0] >= 50)
+                            {
+                                currentScriptParameters[0] -= 50;
+                            }
+                            else
+                            {
+                                currentScriptParameters[0] = 0;
+                            }
+                            Thread.Sleep(50);
+                            checkTime += 50;
                         }
-                }
-                checkIKey++;
+                        break;
+                    }
+                default:
+                    {
+                        break;
+                    }
             }
-            currentConstEventInstruction = null;
+            currentScriptID = -1;
         }
         #endregion
 
@@ -196,7 +193,7 @@ namespace GameCore
                 pen.BeginDrawing();
                 DrawUnits();
                 DrawMenus();
-                DrawConstEventInstruction();
+                DrawScript();
 
                 DrawDebug();
                 pen.EndDrawing();
@@ -1104,7 +1101,6 @@ namespace GameCore
                     }
                     if (ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount] != null)
                     {
-
                         if (ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 == null)
                         {
                             ResourceManager.smapTextureStore[ResourceManager.sceneMapDictionary[currentSmapID].buildingLayerMatrix[xCount, yCount].textureID].textureD3D9 = pen.CreateTexture(
@@ -1478,21 +1474,21 @@ namespace GameCore
             }
         }
 
-        private void DrawConstEventInstruction()
+        private void DrawScript()
         {
-            if (currentConstEventInstruction != null)
+            if (currentScriptID >= 0)
             {
-                pen.BeginInstructionDrawing();
-                switch (currentConstEventInstruction.type)
+                pen.BeginScriptDrawing();
+                switch (currentScriptID)
                 {
-                    case InstructionType.InstructionType_ScreenGettingDark:
+                    case 0:
                         {
-                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentConstEventInstruction.instructionParametersArray[0], System.Drawing.Color.Black));
+                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentScriptParameters[0], System.Drawing.Color.Black));
                             break;
                         }
-                    case InstructionType.InstructionType_ScreenGettingBright:
+                    case 1:
                         {
-                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentConstEventInstruction.instructionParametersArray[0], System.Drawing.Color.Black));
+                            pen.DrawRateRectangle(0f, 0f, 1f, 1f, System.Drawing.Color.FromArgb(currentScriptParameters[0], System.Drawing.Color.Black));
                             break;
                         }
                     default:
@@ -1500,7 +1496,7 @@ namespace GameCore
                             break;
                         }
                 }
-                pen.EndInstructionDrawing();
+                pen.EndScriptDrawing();
             }
         }
 
@@ -1535,7 +1531,7 @@ namespace GameCore
                 this.unitTextureScaling = (float)displayTargetForm.Width / (float)ConstManager.baseScreenSizeX;
                 this.portraitTextureScaling = (float)ConstManager.basePortraitSize / (float)ResourceManager.portraitTextureStore[0].textureWidth;
                 this.itemTextureScaling = (float)ConstManager.baseItemSize / (float)ResourceManager.mmapTextureStore[ConstManager.itemTextureStartIndex].textureWidth;
-                pen = new MediaCore.DrawOperator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height, unitTextureScaling, portraitTextureScaling, itemTextureScaling);
+                pen = new MediaCore.SlimDX11Operator(displayTargetForm.Handle, displayTargetForm.Width, displayTargetForm.Height, unitTextureScaling, portraitTextureScaling, itemTextureScaling);
                 controller = new MediaCore.InputOperator(displayTargetForm);
 
                 ResizeWindow();

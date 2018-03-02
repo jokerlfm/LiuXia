@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="InputOperator.cs" />
-    <Compile Include="DrawOperator.cs" />
+    <Compile Include="SlimDX11Operator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
